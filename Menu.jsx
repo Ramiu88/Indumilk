@@ -51,9 +51,9 @@ const menuItems = [
 
 // Upcoming products (for side sliders)
 const upcomingProducts = [
-    { src: "butter.jpg", name: { fr: "Beurre Fermier", en: "Farm Butter", ar: "زبدة المزرعة" } },
-    { src: "milkshake.jpg", name: { fr: "Milkshake Choco", en: "Choco Milkshake", ar: "ميلك شيك شوكولا" } },
-    { src: "fromage-brie.jpg", name: { fr: "Fromage Brie", en: "Brie Cheese", ar: "جبن بري" } }
+    { src: "https://images.pexels.com/photos/248412/pexels-photo-248412.jpeg?auto=compress&cs=tinysrgb&w=200", name: { fr: "Beurre Fermier", en: "Farm Butter", ar: "زبدة المزرعة" } },
+    { src: "https://images.pexels.com/photos/1435735/pexels-photo-1435735.jpeg?auto=compress&cs=tinysrgb&w=200", name: { fr: "Milkshake Choco", en: "Choco Milkshake", ar: "ميلك شيك شوكولا" } },
+    { src: "https://images.pexels.com/photos/773253/pexels-photo-773253.jpeg?auto=compress&cs=tinysrgb&w=200", name: { fr: "Fromage Brie", en: "Brie Cheese", ar: "جبن بري" } }
 ];
 
 // State
@@ -79,7 +79,8 @@ function loadSettings() {
     if (savedDarkMode === 'enabled') {
         isDarkMode = true;
         document.body.classList.add('dark-mode');
-        document.getElementById('darkModeToggle').textContent = '☀️';
+        const toggle = document.getElementById('darkModeToggle');
+        if (toggle) toggle.textContent = '☀️';
     }
 }
 
@@ -96,6 +97,8 @@ function getStarRating() {
 // Menu
 function populateMenu() {
     const menuList = document.getElementById('menuList');
+    if (!menuList) return;
+    
     menuList.innerHTML = '';
     const t = translations[currentLang];
     
@@ -103,7 +106,7 @@ function populateMenu() {
         const li = document.createElement('li');
         const categoryTranslated = item.category.toLowerCase() === 'dairy' ? t.dairy : t.cheese;
         li.innerHTML = `
-            <img src="${item.image}" alt="${item.name[currentLang]}" />
+            <img src="${item.image}" alt="${item.name[currentLang]}" onerror="this.src='https://images.pexels.com/photos/416978/pexels-photo-416978.jpeg?auto=compress&cs=tinysrgb&w=200'" />
             <div class="menuItemName">${item.name[currentLang]}</div>
             <div class="menuItemPrice">${item.price}</div>
             <div class="menuItemCategory">${categoryTranslated}</div>
@@ -117,31 +120,49 @@ function populateMenu() {
 function startSlider() {
     const slider = document.getElementById('bannerSlider');
     const desc = document.getElementById('bannerDesc');
+    if (!slider || !desc) return;
+    
     slider.innerHTML = '';
     bannerImages.forEach((img, index) => {
         const imgElement = document.createElement('img');
         imgElement.src = img.src;
         imgElement.alt = img.alt;
         imgElement.className = 'bannerSlide' + (index === 0 ? ' active' : '');
+        imgElement.onerror = function() {
+            this.src = 'https://images.pexels.com/photos/416978/pexels-photo-416978.jpeg?auto=compress&cs=tinysrgb&w=800';
+        };
         slider.appendChild(imgElement);
     });
     setInterval(() => nextSlide(), 4000);
     desc.innerHTML = `<b>${bannerImages[0].alt}:</b> ${bannerImages[0].desc[currentLang]}`;
 }
+
 function showSlide(index) {
     const slides = document.querySelectorAll('.bannerSlide');
+    if (slides.length === 0) return;
+    
     slides[currentSlide].classList.remove('active');
     currentSlide = (index + bannerImages.length) % bannerImages.length;
     slides[currentSlide].classList.add('active');
     const desc = document.getElementById('bannerDesc');
-    desc.innerHTML = `<b>${bannerImages[currentSlide].alt}:</b> ${bannerImages[currentSlide].desc[currentLang]}`;
+    if (desc) {
+        desc.innerHTML = `<b>${bannerImages[currentSlide].alt}:</b> ${bannerImages[currentSlide].desc[currentLang]}`;
+    }
 }
-function nextSlide() { showSlide(currentSlide + 1); }
-function prevSlide() { showSlide(currentSlide - 1); }
+
+function nextSlide() { 
+    showSlide(currentSlide + 1); 
+}
+
+function prevSlide() { 
+    showSlide(currentSlide - 1); 
+}
 
 // Recommended
 function showRecommended() {
     const container = document.getElementById('recommended');
+    if (!container) return;
+    
     const shuffled = [...menuItems].sort(() => 0.5 - Math.random());
     const recommended = shuffled.slice(0, 2);
     const t = translations[currentLang];
@@ -156,6 +177,8 @@ function showRecommended() {
 function startUpcomingSliders() {
     const leftSlider = document.getElementById('upcomingLeft');
     const rightSlider = document.getElementById('upcomingRight');
+    if (!leftSlider || !rightSlider) return;
+    
     const t = translations[currentLang];
     
     function renderSlider(container, index) {
@@ -181,41 +204,62 @@ function startUpcomingSliders() {
 // Language
 function toggleLangDropdown() {
     const dropdown = document.getElementById('langDropdown');
-    dropdown.classList.toggle('show');
+    if (dropdown) dropdown.classList.toggle('show');
 }
+
 function setLang(lang) {
     currentLang = lang;
     localStorage.setItem('selectedLanguage', lang);
     updateLanguage();
-    document.getElementById('langDropdown').classList.remove('show');
+    const dropdown = document.getElementById('langDropdown');
+    if (dropdown) dropdown.classList.remove('show');
 }
+
 function updateLanguage() {
     const t = translations[currentLang];
-    document.getElementById('btn-menu').textContent = t.menu;
-    document.getElementById('btn-produit').textContent = t.produit;
-    document.getElementById('btn-games').textContent = t.games;
-    document.getElementById('btn-history').textContent = t.history;
-    document.getElementById('btn-contact').textContent = t.contact;
-    document.getElementById('profileTitle').textContent = t.profile;
-    document.getElementById('logoutBtn').textContent = t.logout;
-    document.getElementById('menuTitle').textContent = t.menuTitle;
+    
+    // Update navigation
+    const elements = {
+        'btn-menu': t.menu,
+        'btn-produit': t.produit,
+        'btn-games': t.games,
+        'btn-history': t.history,
+        'btn-contact': t.contact,
+        'profileTitle': t.profile,
+        'logoutBtn': t.logout,
+        'menuTitle': t.menuTitle
+    };
+    
+    Object.entries(elements).forEach(([id, text]) => {
+        const element = document.getElementById(id);
+        if (element) element.textContent = text;
+    });
+    
     const profileInfo = document.getElementById('profileInfo');
-    profileInfo.innerHTML = `<p>${t.profileName}</p><p>${t.profileEmail}</p><p>${t.profileMember}</p>`;
+    if (profileInfo) {
+        profileInfo.innerHTML = `<p>${t.profileName}</p><p>${t.profileEmail}</p><p>${t.profileMember}</p>`;
+    }
+    
     const orderHistory = document.getElementById('orderHistory');
-    orderHistory.innerHTML = `<h3>${t.orderHistoryTitle}</h3><p>${t.orderHistoryEmpty}</p>`;
+    if (orderHistory) {
+        orderHistory.innerHTML = `<h3>${t.orderHistoryTitle}</h3><p>${t.orderHistoryEmpty}</p>`;
+    }
+    
     const desc = document.getElementById('bannerDesc');
-    if (bannerImages[currentSlide]) {
+    if (desc && bannerImages[currentSlide]) {
         desc.innerHTML = `<b>${bannerImages[currentSlide].alt}:</b> ${bannerImages[currentSlide].desc[currentLang]}`;
     }
+    
     populateMenu();
     showRecommended();
     startUpcomingSliders();
+    
     if (currentLang === 'ar') {
         document.body.setAttribute('dir', 'rtl');
         document.body.style.fontFamily = 'Arial, Tahoma, sans-serif';
     } else {
         document.body.setAttribute('dir', 'ltr');
-        document.body.style.fontFamily = 'Arial, sans-serif';
+        document.body.style.fontFamily = 'Inter, Segoe UI, sans-serif';
     }
 }
 
@@ -224,30 +268,47 @@ function toggleDarkMode() {
     isDarkMode = !isDarkMode;
     document.body.classList.toggle('dark-mode');
     const toggle = document.getElementById('darkModeToggle');
-    toggle.textContent = isDarkMode ? '☀️' : '🌙';
+    if (toggle) {
+        toggle.textContent = isDarkMode ? '☀️' : '🌙';
+    }
     localStorage.setItem('darkMode', isDarkMode ? 'enabled' : 'disabled');
 }
 
 // Account functions
-function showAccount() { document.getElementById('accountSlide').classList.add('show'); }
-function closeAccount() { document.getElementById('accountSlide').classList.remove('show'); }
+function showAccount() { 
+    const slide = document.getElementById('accountSlide');
+    if (slide) slide.classList.add('show'); 
+}
+
+function closeAccount() { 
+    const slide = document.getElementById('accountSlide');
+    if (slide) slide.classList.remove('show'); 
+}
 
 // Logout functions
 function logout() {
     const t = translations[currentLang];
     const logoutBtn = document.getElementById('logoutBtn');
+    if (!logoutBtn) return;
+    
+    if (!confirm(t.logoutConfirm)) return;
+    
     logoutBtn.textContent = t.logoutInProgress;
     logoutBtn.disabled = true;
     logoutBtn.style.opacity = '0.7';
+    
     localStorage.removeItem('indumilk_currentUser');
     localStorage.removeItem('indumilk_session');
     localStorage.removeItem('selectedLanguage');
     localStorage.removeItem('darkMode');
+    
     setTimeout(() => {
         logoutBtn.textContent = t.logoutSuccess;
         logoutBtn.style.backgroundColor = '#4CAF50';
         closeAccount();
-        setTimeout(() => { window.location.href = 'index.html'; }, 800);
+        setTimeout(() => { 
+            window.location.href = 'index.html'; 
+        }, 800);
     }, 1000);
 }
 
@@ -255,7 +316,9 @@ function logout() {
 document.addEventListener('click', function(event) {
     const langSelect = document.querySelector('.langSelect');
     const dropdown = document.getElementById('langDropdown');
-    if (!langSelect.contains(event.target)) dropdown.classList.remove('show');
+    if (langSelect && dropdown && !langSelect.contains(event.target)) {
+        dropdown.classList.remove('show');
+    }
 });
 
 // Init on load
