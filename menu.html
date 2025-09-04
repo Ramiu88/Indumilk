@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Indumilk Delights - Menu</title>
+    <link rel="stylesheet" href="Menu.css">
+</head>
+<body>
+    <script src="auth-guard.js"></script>
+    <script>
+        // Immediately-invoked function to prevent FOUC (Flash of Unstyled Content)
+        // when switching to dark mode. This script runs before the page is rendered.
+        (function() {
+            try {
+                const theme = localStorage.getItem('theme');
+                // If dark mode is stored in localStorage, apply the 'dark-mode' class to the <html> element.
+                if (theme === 'dark') {
+                    document.documentElement.classList.add('dark-mode');
+                }
+            } catch (e) {}
+        })();
+    </script>
+    <nav class="navbar">
+        <a href="#" class="logo" style="display:flex;align-items:center;">
+            <img src="Indumilk.png" alt="Indumilk Logo" style="height:58px;vertical-align:middle;">
+        </a>
+        <div class="navLinks">
+            <a id="btn-menu" class="active" href="menu.html">Menu</a>
+            <a id="btn-produit" href="products.html">Produit</a>
+            <a id="btn-games" href="minigame.html">Mini Jeux</a>
+            <a id="btn-history" href="history.html">Histoire</a>
+            <a id="btn-contact" href="contact.html">Contact</a>
+        </div>
+        <div class="langSelect">
+            <button class="langIcon" onclick="toggleLangDropdown()">🌐</button>
+            <div class="langDropdown" id="langDropdown">
+                <button onclick="setLang('fr')">Français</button>
+                <button onclick="setLang('en')">English</button>
+                <button onclick="setLang('ar')">العربية</button>
+            </div>
+        </div>
+        <button class="accountHub" onclick="showAccount()">👤</button>
+    </nav>
+
+    <div class="accountSlide" id="accountSlide">
+        <button class="closeSlide" onclick="closeAccount()">×</button>
+        <h2 id="profileTitle">Profil</h2>
+        <div class="profileInfo" id="profileInfo">
+            <p>Nom: Utilisateur Invité</p>
+            <p>Email: guest@indumilk.com</p>
+            <p>Membre depuis: 2024</p>
+        </div>
+        <div class="orderHistory" id="orderHistory">
+            <h3>Historique des commandes</h3>
+            <p>Aucune commande récente</p>
+        </div>
+        <button class="logoutBtn" id="logoutBtn" onclick="logout()">Déconnexion</button>
+    </div>
+
+    <!-- Menu Section -->
+    <div class="menuContainer tabPage" id="menu">
+        <h1 class="menuTitle" id="menuTitle">Indumilk Menu</h1>
+        <div class="bannerSliderContainer">
+            <div class="bannerSlider" id="bannerSlider">
+                <img src="lait.jpg" alt="Milk" class="bannerSlide active" />
+                <img src="creme.jpg" alt="Crème Fraîche" class="bannerSlide" />
+                <img src="mozarella.jpg" alt="Mozzarella" class="bannerSlide" />
+                <img src="ricotta.png" alt="Ricotta" class="bannerSlide" />
+                <img src="fromage edam.jpg" alt="Fromage Edam" class="bannerSlide" />
+            </div>
+            <div class="bannerDesc" id="bannerDesc">
+                <b>Milk / Lait:</b> Fresh farm milk, rich in nutrients and taste.
+            </div>
+        </div>
+        <ul class="menuList" id="menuList">
+            <!-- Menu items will be populated by JavaScript -->
+        </ul>
+    </div>
+
+    <button class="darkModeToggle" onclick="toggleDarkMode()" id="darkModeToggle">🌙</button>
+
+    <script src="Menu.jsx"></script>
+</body>
+</html>

@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Indumilk Delights - Order History</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f9fafb;
+            transition: all 0.3s ease;
+        }
+
+        .dark-mode {
+            background-color: #111827;
+            color: #f9fafb;
+        }
+
+        .dark-mode .bg-white {
+            background-color: #1f2937 !important;
+        }
+
+        .dark-mode .text-gray-900 {
+            color: #f9fafb !important;
+        }
+
+        .dark-mode .text-gray-600 {
+            color: #9ca3af !important;
+        }
+
+        .dark-mode .border-gray-200 {
+            border-color: #374151 !important;
+        }
+
+        /* Navigation */
+        .navbar {
+            background: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .dark-mode .navbar {
+            background: #1f2937;
+            border-bottom-color: #374151;
+        }
+
+        .navLinks {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .navLinks a {
+            text-decoration: none;
+            color: #374151;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .dark-mode .navLinks a {
+            color: #d1d5db;
+        }
+
+        .navLinks a.active {
+            color: #2563eb;
+        }
+
+        .langSelect {
+            position: relative;
+        }
+
+        .langIcon {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .langDropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: none;
+            z-index: 100;
+        }
+
+        .dark-mode .langDropdown {
+            background: #1f2937;
+            border-color: #374151;
+        }
+
+        .langDropdown button {
+            display: block;
+            width: 100%;
+            padding: 0.5rem 1rem;
+            text-align: left;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+
+        .accountHub {
+            background: #f3f4f6;
+            border: none;
+            padding: 0.5rem;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.5rem;
+        }
+
+        .dark-mode .accountHub {
+            background: #374151;
+        }
+
+        /* Account Slide */
+        .accountSlide {
+            position: fixed;
+            top: 0;
+            right: -400px;
+            width: 400px;
+            height: 100vh;
+            background: white;
+            box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+            transition: right 0.3s ease;
+            z-index: 1000;
+            padding: 2rem;
+        }
+
+        .dark-mode .accountSlide {
+            background: #1f2937;
+        }
+
+        .accountSlide.active {
+            right: 0;
+        }
+
+        .closeSlide {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        /* Main Content */
+        .historyContainer {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .historyTitle {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #1f2937;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .dark-mode .historyTitle {
+            color: #f9fafb;
+        }
+
+        /* Summary Cards */
+        .summaryCards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .summaryCard {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .dark-mode .summaryCard {
+            background: #1f2937;
+            border-color: #374151;
+        }
+
+        .cardIcon {
+            font-size: 2.5rem;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: #f3f4f6;
+        }
+
+        .dark-mode .cardIcon {
+            background: #374151;
+        }
+
+        .cardContent h3 {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #6b7280;
+            margin-bottom: 0.5rem;
+        }
+
+        .dark-mode .cardContent h3 {
+            color: #9ca3af;
+        }
+
+        .cardValue {
+            font-size: 1.875rem;
+            font-weight: bold;
+            color: #1f2937;
+        }
+
+        .dark-mode .cardValue {
+            color: #f9fafb;
+        }
+
+        /* Filter Section */
+        .filterSection {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border: 1px solid #e5e7eb;
+            margin-bottom: 2rem;
+        }
+
+        .dark-mode .filterSection {
+            background: #1f2937;
+            border-color: #374151;
+        }
+
+        .filterControls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .searchInput {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 2.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            background: white;
+        }
+
+        .dark-mode .searchInput {
+            background: #374151;
+            border-color: #4b5563;
+            color: #f9fafb;
+        }
+
+        .searchContainer {
+            position: relative;
+        }
+
+        .searchIcon {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9ca3af;
+            font-size: 1rem;
+        }
+
+        .filterGroup {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .filterGroup label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .dark-mode .filterGroup label {
+            color: #d1d5db;
+        }
+
+        .filterGroup select {
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            background: white;
+            font-size: 0.875rem;
+        }
+
+        .dark-mode .filterGroup select {
+            background: #374151;
+            border-color: #4b5563;
+            color: #f9fafb;
+        }
+
+        .filterActions {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .clearFiltersBtn, .exportBtn, .refreshBtn {
+            padding: 0.75rem 1rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .clearFiltersBtn {
+            background: #6b7280;
+            color: white;
+        }
+
+        .clearFiltersBtn:hover {
+            background: #4b5563;
+        }
+
+        .exportBtn {
+            background: #059669;
+            color: white;
+        }
+
+        .exportBtn:hover {
+            background: #047857;
+        }
+
+        .refreshBtn {
+            background: #2563eb;
+            color: white;
+        }
+
+        .refreshBtn:hover {
+            background: #1d4ed8;
+        }
+
+        /* Orders Section */
+        .ordersSection h2 {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #1f2937;
+            margin-bottom: 1.5rem;
+        }
+
+        .dark-mode .ordersSection h2 {
+            color: #f9fafb;
+        }
+
+        .ordersList {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .orderCard {
+            background: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border: 1px solid #e5e7eb;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .dark-mode .orderCard {
+            background: #1f2937;
+            border-color: #374151;
+        }
+
+        .orderCard:hover {
+            box-shadow: 0 8px 15px rgba(0,0,0,0.15);
+            transform: translateY(-2px);
+        }
+
+        .orderCard .content {
+            padding: 1.5rem;
+        }
+
+        .orderHeader {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .orderNumber {
+            font-size: 1.125rem;
+            font-weight: bold;
+            color: #1f2937;
+            margin-bottom: 0.25rem;
+        }
+
+        .dark-mode .orderNumber {
+            color: #f9fafb;
+        }
+
+        .orderDate {
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+
+        .dark-mode .orderDate {
+            color: #9ca3af;
+        }
+
+        .statusBadge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border: 1px solid;
+        }
+
+        .status-completed {
+            background: #dcfce7;
+            color: #166534;
+            border-color: #bbf7d0;
+        }
+
+        .status-pending {
+            background: #fef3c7;
+            color: #92400e;
+            border-color: #fde68a;
+        }
+
+        .status-cancelled {
+            background: #fee2e2;
+            color: #991b1b;
+            border-color: #fecaca;
+        }
+
+        .status-processing {
+            background: #dbeafe;
+            color: #1e40af;
+            border-color: #93c5fd;
+        }
+
+        .status-shipped {
+            background: #e9d5ff;
+            color: #7c3aed;
+            border-color: #c4b5fd;
+        }
+
+        .status-delivered {
+            background: #d1fae5;
+            color: #065f46;
+            border-color: #a7f3d0;
+        }
+
+        .orderItems {
+            margin-bottom: 1rem;
+        }
+
+        .orderItem {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .itemImage {
+            width: 40px;
+            height: 40px;
+            border-radius: 0.5rem;
+            object-fit: cover;
+            background: #f3f4f6;
+        }
+
+        .itemInfo {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .itemName {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #1f2937;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .dark-mode .itemName {
+            color: #f9fafb;
+        }
+
+        .itemDetails {
+            font-size: 0.75rem;
+            color: #6b7280;
+        }
+
+        .dark-mode .itemDetails {
+            color: #9ca3af;
+        }
+
+        .favoriteBtn {
+            padding: 0.25rem;
+            border: none;
+            background: none;
+            cursor: pointer;
+            color: #9ca3af;
+            transition: color 0.3s;
+            border-radius: 50%;
+        }
+
+        .favoriteBtn.active {
+            color: #ef4444;
+        }
+
+        .favoriteBtn:hover {
+            color: #ef4444;
+        }
+
+        .orderFooter {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .orderTotal {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: #2563eb;
+        }
+
+        .itemCount {
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+
+        .dark-mode .itemCount {
+            color: #9ca3af;
+        }
+
+        .viewDetailsBtn {
+            width: 100%;
+            background: #2563eb;
+            color: white;
+            padding: 0.75rem 1rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .viewDetailsBtn:hover {
+            background: #1d4ed8;
+        }
+
+        /* No Orders */
+        .noOrders {
+            text-align: center;
+            padding: 3rem;
+            background: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border: 1px solid #e5e7eb;
+        }
+
+        .dark-mode .noOrders {
+            background: #1f2937;
+            border-color: #374151;
+        }
+
+        .noOrdersIcon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .orderNowBtn {
+            background: #2563eb;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 1rem;
+            transition: background 0.3s;
+        }
+
+        .orderNowBtn:hover {
+            background: #1d4ed8;
+        }
+
+        /* Modal */
+        .transactionModal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            padding: 1rem;
+        }
+
+        .transactionModal.active {
+            display: flex;
+        }
+
+        .modalContent {
+            background: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 20px 25px rgba(0,0,0,0.2);
+            max-width: 48rem;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .dark-mode .modalContent {
+            background: #1f2937;
+        }
+
+        .modalHeader {
+            padding: 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .dark-mode .modalHeader {
+            border-bottom-color: #374151;
+        }
+
+        .closeModal {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #9ca3af;
+        }
+
+        .modalBody {
+            padding: 1.5rem;
+        }
+
+        /* Pagination */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 2rem;
+        }
+
+        .pageBtn {
+            padding: 0.5rem 0.75rem;
+            background: white;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: #1f2937;
+        }
+
+        .dark-mode .pageBtn {
+            background: #1f2937;
+            border-color: #4b5563;
+            color: #f9fafb;
+        }
+
+        .pageBtn:hover:not(:disabled) {
+            background: #f3f4f6;
+        }
+
+        .dark-mode .pageBtn:hover:not(:disabled) {
+            background: #374151;
+        }
+
+        .pageBtn.active {
+            background: #2563eb;
+            color: white;
+            border-color: #2563eb;
+        }
+
+        .pageBtn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Dark Mode Toggle */
+        .darkModeToggle {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 1rem;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            font-size: 1.25rem;
+            transition: all 0.3s;
+            z-index: 100;
+        }
+
+        .darkModeToggle:hover {
+            background: #1d4ed8;
+            transform: scale(1.1);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .historyContainer {
+                padding: 1rem;
+            }
+
+            .summaryCards {
+                grid-template-columns: 1fr;
+            }
+
+            .filterControls {
+                grid-template-columns: 1fr;
+            }
+
+            .ordersList {
+                grid-template-columns: 1fr;
+            }
+
+            .modalContent {
+                margin: 0.5rem;
+                width: calc(100% - 1rem);
+            }
+        }
+
+        .showingResults {
+            margin-top: 1rem;
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+
+        .dark-mode .showingResults {
+            color: #9ca3af;
+        }
+    </style>
+</head>
+<body>
+    <script>
+        // Dark mode initialization
+        (function() {
+            try {
+                const theme = localStorage.getItem('theme');
+                if (theme === 'dark') {
+                    document.documentElement.classList.add('dark-mode');
+                }
+            } catch (e) {}
+        })();
+    </script>
+
+    <nav class="navbar">
+        <a href="products.html" class="logo" style="display:flex;align-items:center;">
+            <img src="Indumilk.png" alt="Indumilk Logo" style="height:58px;vertical-align:middle;">
+        </a>
+        <div class="navLinks">
+            <a id="btn-menu" href="menu.html">Menu</a>
+            <a id="btn-produit" href="products.html">Produit</a>
+            <a id="btn-games" href="minigame.html">Mini Jeux</a>
+            <a id="btn-history" class="active" href="history.html">Histoire</a>
+            <a id="btn-contact" href="contact.html">Contact</a>
+        </div>
+        <div class="langSelect">
+            <button class="langIcon" onclick="toggleLangDropdown()">🌐</button>
+            <div class="langDropdown" id="langDropdown">
+                <button onclick="setLang('fr')">Français</button>
+                <button onclick="setLang('en')">English</button>
+                <button onclick="setLang('ar')">العربية</button>
+            </div>
+        </div>
+        <button class="accountHub" onclick="showAccount()">👤</button>
+    </nav>
+
+    <div class="accountSlide" id="accountSlide">
+        <button class="closeSlide" onclick="closeAccount()">×</button>
+        <h2 id="profileTitle">Profil</h2>
+        <div class="profileInfo" id="profileInfo">
+            <p>Nom: Utilisateur Invité</p>
+            <p>Email: guest@indumilk.com</p>
+            <p>Membre depuis: 2024</p>
+        </div>
+        <div class="orderHistory" id="orderHistory">
+            <h3>Historique des commandes</h3>
+            <p>Aucune commande récente</p>
+        </div>
+        <button class="logoutBtn" id="logoutBtn" onclick="logout()">Déconnexion</button>
+    </div>
+
+    <!-- History Page Content -->
+    <div class="historyContainer">
+        <h1 class="historyTitle" id="pageTitle">Historique des Commandes</h1>
+        
+        <!-- Summary Cards -->
+        <div class="summaryCards">
+            <div class="summaryCard">
+                <div class="cardIcon">📦</div>
+                <div class="cardContent">
+                    <h3 id="totalOrdersLabel">Total des Commandes</h3>
+                    <span class="cardValue" id="totalOrders">0</span>
+                </div>
+            </div>
+            <div class="summaryCard">
+                <div class="cardIcon">💰</div>
+                <div class="cardContent">
+                    <h3 id="totalSpentLabel">Total Dépensé</h3>
+                    <span class="cardValue" id="totalSpent">0 DH</span>
+                </div>
+            </div>
+            <div class="summaryCard">
+                <div class="cardIcon">⭐</div>
+                <div class="cardContent">
+                    <h3 id="favoriteItemLabel">Article Préféré</h3>
+                    <span class="cardValue" id="favoriteItem">-</span>
+                </div>
+            </div>
+            <div class="summaryCard">
+                <div class="cardIcon">📊</div>
+                <div class="cardContent">
+                    <h3 id="averageOrderLabel">Commande Moyenne</h3>
+                    <span class="cardValue" id="averageOrder">0 DH</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter Section -->
+        <div class="filterSection">
+            <div class="filterControls">
+                <div class="searchContainer">
+                    <span class="searchIcon">🔍</span>
+                    <input type="text" id="searchInput" class="searchInput" placeholder="Rechercher des commandes...">
+                </div>
+                <div class="filterGroup">
+                    <label for="dateFilter" id="dateFilterLabel">Filtrer par période:</label>
+                    <select id="dateFilter">
+                        <option value="all">Toutes les périodes</option>
+                        <option value="today">Aujourd'hui</option>
+                        <option value="thisWeek">Cette semaine</option>
+                        <option value="thisMonth">Ce mois</option>
+                        <option value="last30Days">30 derniers jours</option>
+                        <option value="last90Days">90 derniers jours</option>
+                        <option value="thisYear">Cette année</option>
+                    </select>
+                </div>
+                <div class="filterGroup">
+                    <label for="statusFilter" id="statusFilterLabel">Filtrer par statut:</label>
+                    <select id="statusFilter">
+                        <option value="all">Tous les statuts</option>
+                        <option value="completed">Terminé</option>
+                        <option value="pending">En attente</option>
+                        <option value="processing">En cours</option>
+                        <option value="shipped">Expédié</option>
+                        <option value="delivered">Livré</option>
+                        <option value="cancelled">Annulé</option>
+                    </select>
+                </div>
+                <div class="filterGroup">
+                    <label for="sortBy" id="sortByLabel">Trier par:</label>
+                    <select id="sortBy">
+                        <option value="newest">Plus récent</option>
+                        <option value="oldest">Plus ancien</option>
+                        <option value="highest">Montant le plus élevé</option>
+                        <option value="lowest">Montant le plus bas</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="filterActions">
+                <button class="clearFiltersBtn" onclick="clearFilters()">
+                    <span>🔄</span>
+                    <span id="clearFiltersBtn">Effacer les filtres</span>
+                </button>
+                <button class="exportBtn" onclick="exportOrders()">
+                    <span>📥</span>
+                    <span id="exportBtn">Exporter</span>
+                </button>
+                <button class="refreshBtn" onclick="refreshOrders()">
+                    <span>🔄</span>
+                    <span id="refreshBtn">Actualiser</span>
+                </button>
+            </div>
+            
+            <div class="showingResults" id="showingResults">
+                Affichage de 0 résultats
+            </div>
+        </div>
+
+        <!-- Orders List -->
+        <div class="ordersSection">
+            <h2 id="ordersSectionTitle">Vos Commandes</h2>
+            <div class="ordersList" id="ordersList">
+                <!-- Orders populated by JavaScript -->
+            </div>
+            
+            <!-- Pagination -->
+            <div class="pagination" id="pagination" style="display: none;">
+                <!-- Pagination buttons populated by JavaScript -->
+            </div>
+            
+            <div class="noOrders" id="noOrders" style="display: none;">
+                <div class="noOrdersIcon">📋</div>
+                <h3 id="noOrdersTitle">Aucune commande trouvée</h3>
+                <p id="noOrdersText">Vous n'avez pas encore passé de commandes ou aucune commande ne correspond aux filtres sélectionnés.</p>
+                <a href="menu.html" class="orderNowBtn" id="orderNowBtn">Commander maintenant</a>
+            </div>
+        </div>
+
+        <!-- Transaction Details Modal -->
+        <div class="transactionModal" id="transactionModal">
+            <div class="modalContent">
+                <div class="modalHeader">
+                    <h2 id="modalTitle">Détails de la Transaction</h2>
+                    <button class="closeModal" onclick="closeTransactionModal()">×</button>
+                </div>
+                <div class="modalBody" id="modalBody">
+                    <!-- Transaction details populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dark Mode Toggle -->
+    <button class="darkModeToggle" onclick="toggleDarkMode()" id="darkModeToggle">🌙</button>
+
+    <script src="history.jsx"></script>
+</body>
+</html>

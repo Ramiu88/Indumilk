@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Indumilk Delights - Contact</title>
+    <link rel="stylesheet" href="contact.css">
+</head>
+<body>
+    <script src="auth-guard.js"></script>
+    <script>
+        // Immediately-invoked function to prevent FOUC (Flash of Unstyled Content)
+        // when switching to dark mode. This script runs before the page is rendered.
+        (function() {
+            try {
+                const theme = localStorage.getItem('theme');
+                // If dark mode is stored in localStorage, apply the 'dark-mode' class to the <html> element.
+                if (theme === 'dark') {
+                    document.documentElement.classList.add('dark-mode');
+                }
+            } catch (e) {}
+        })();
+    </script>
+    <nav class="navbar">
+        <a href="products.html" class="logo" style="display:flex;align-items:center;">
+            <img src="Indumilk.png" alt="Indumilk Logo" style="height:58px;vertical-align:middle;">
+        </a>
+        <div class="navLinks">
+            <a id="btn-menu" href="menu.html">Menu</a>
+            <a id="btn-produit" href="products.html">Produit</a>
+            <a id="btn-games" href="minigame.html">Mini Jeux</a>
+            <a id="btn-history" href="history.html">Histoire</a>
+            <a id="btn-contact" class="active" href="contact.html">Contact</a>
+        </div>
+        <div class="langSelect">
+            <button class="langIcon" onclick="toggleLangDropdown()">🌐</button>
+            <div class="langDropdown" id="langDropdown">
+                <button onclick="setLang('fr')">Français</button>
+                <button onclick="setLang('en')">English</button>
+                <button onclick="setLang('ar')">العربية</button>
+            </div>
+        </div>
+        <button class="accountHub" onclick="showAccount()">👤</button>
+    </nav>
+
+    <div class="accountSlide" id="accountSlide">
+        <button class="closeSlide" onclick="closeAccount()">×</button>
+        <h2 id="profileTitle">Profil</h2>
+        <div class="profileInfo" id="profileInfo">
+            <p>Nom: Utilisateur Invité</p>
+            <p>Email: guest@indumilk.com</p>
+            <p>Membre depuis: 2024</p>
+        </div>
+        <div class="orderHistory" id="orderHistory">
+            <h3>Historique des commandes</h3>
+            <p>Aucune commande récente</p>
+        </div>
+        <button class="logoutBtn" id="logoutBtn" onclick="logout()">Déconnexion</button>
+    </div>
+
+    <div class="contactContainer">
+        <h1 class="contactTitle" id="contactTitle">Contactez-nous</h1>
+        
+        <div class="contactContent">
+            <!-- Contact Information -->
+            <div class="contactInfo">
+                <h2 id="contactInfoTitle">Nos Coordonnées</h2>
+                
+                <div class="infoItem">
+                    <div class="infoIcon">📧</div>
+                    <div class="infoText">
+                        <div class="infoLabel" id="emailLabel">Email</div>
+                        <div class="infoValue">contact@indumilk.com</div>
+                    </div>
+                </div>
+
+                <div class="infoItem">
+                    <div class="infoIcon">📞</div>
+                    <div class="infoText">
+                        <div class="infoLabel" id="phoneLabel">Téléphone</div>
+                        <div class="infoValue">+212 5 22 XX XX XX</div>
+                    </div>
+                </div>
+
+                <div class="infoItem">
+                    <div class="infoIcon">📍</div>
+                    <div class="infoText">
+                        <div class="infoLabel" id="addressLabel">Adresse</div>
+                        <div class="infoValue">123 Rue des Laitiers, Casablanca, Maroc</div>
+                    </div>
+                </div>
+
+                <div class="infoItem">
+                    <div class="infoIcon">⏰</div>
+                    <div class="infoText">
+                        <div class="infoLabel" id="hoursLabel">Horaires</div>
+                        <div class="infoValue" id="hoursValue">Lun-Ven: 8h-18h<br>Sam: 9h-16h</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contact Form -->
+            <div class="contactForm">
+                <h2 id="formTitle">Envoyez-nous un Message</h2>
+                
+                <form id="contactFormElement" onsubmit="submitForm(event)">
+                    <div class="formGroup">
+                        <label for="name" class="formLabel" id="nameLabel">Nom complet</label>
+                        <input type="text" id="name" class="formInput" required>
+                    </div>
+
+                    <div class="formGroup">
+                        <label for="email" class="formLabel" id="emailFormLabel">Email</label>
+                        <input type="email" id="email" class="formInput" required>
+                    </div>
+
+                    <div class="formGroup">
+                        <label for="subject" class="formLabel" id="subjectLabel">Sujet</label>
+                        <input type="text" id="subject" class="formInput" required>
+                    </div>
+
+                    <div class="formGroup">
+                        <label for="message" class="formLabel" id="messageLabel">Message</label>
+                        <textarea id="message" class="formTextarea" required></textarea>
+                    </div>
+
+                    <button type="submit" class="submitBtn" id="submitBtn">Envoyer le Message</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Map Section -->
+        <div class="mapSection">
+            <h2 id="mapTitle">Notre Localisation</h2>
+            <div class="mapPlaceholder" id="mapPlaceholder">
+                🗺️ Carte Interactive - Casablanca, Maroc
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Message -->
+    <div class="successMessage" id="successMessage">
+        Message envoyé avec succès! ✓
+    </div>
+
+    <!-- Dark Mode Toggle -->
+    <button class="darkModeToggle" onclick="toggleDarkMode()" id="darkModeToggle">🌙</button>
+
+    <script src="contact.js"></script>
+    
+</body>
+</html>

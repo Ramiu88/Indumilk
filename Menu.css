@@ -1,0 +1,518 @@
+* { 
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background: #f5f5f5;
+    color: #333;
+    transition: all 0.3s ease;
+}
+
+/* General Navbar */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 25px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.logo {
+    text-decoration: none;
+}
+
+.navLinks {
+    display: flex;
+    align-items: center;
+}
+
+.navLinks a {
+    margin: 0 12px;
+    text-decoration: none;
+    font-weight: bold;
+    color: #333;
+    position: relative;
+    transition: color 0.2s ease;
+    padding: 8px 12px;
+    border-radius: 5px;
+}
+
+.navLinks a:hover {
+    color: #007bff;
+    text-shadow: 0 0 8px rgba(0,123,255,0.8);
+}
+
+.navLinks a.active {
+    color: #007bff;
+    border-bottom: 2px solid #007bff;
+    padding-bottom: 3px;
+}
+
+.langSelect {
+    position: relative;
+    margin: 0 15px;
+}
+
+.langIcon {
+    cursor: pointer;
+    font-size: 20px;
+    padding: 8px 12px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+    background: #007bff;
+    color: white;
+    border: none;
+    box-shadow: 0 2px 5px rgba(0,123,255,0.3);
+}
+
+.langIcon:hover {
+    box-shadow: 0 4px 15px rgba(0,123,255,0.5);
+    transform: scale(1.05);
+}
+
+.langDropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    display: none;
+    min-width: 120px;
+    overflow: hidden;
+}
+
+.langDropdown.show {
+    display: block;
+    animation: dropdownShow 0.3s ease;
+}
+
+@keyframes dropdownShow {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.langDropdown button {
+    width: 100%;
+    padding: 12px 15px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.2s ease;
+    font-size: 14px;
+}
+
+.langDropdown button:hover {
+    background: rgba(0,123,255,0.1);
+}
+
+.accountHub {
+    cursor: pointer;
+    font-size: 20px;
+    padding: 8px 12px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+    background: #28a745;
+    color: white;
+    border: none;
+    box-shadow: 0 2px 5px rgba(40,167,69,0.3);
+}
+
+.accountHub:hover {
+    box-shadow: 0 4px 15px rgba(40,167,69,0.5);
+    transform: scale(1.05);
+}
+
+/* Dark Mode */
+body.dark-mode {
+    background: #121212;
+    color: #eee;
+}
+
+body.dark-mode .navbar {
+    background: rgba(30, 30, 30, 0.95);
+}
+
+body.dark-mode .navLinks a {
+    color: #eee;
+}
+
+body.dark-mode .navLinks a:hover {
+    color: #00d4ff;
+    text-shadow: 0 0 10px rgba(0,212,255,0.8);
+}
+
+body.dark-mode .langDropdown {
+    background: #2a2a2a;
+    border-color: #555;
+}
+
+body.dark-mode .menuList li {
+    background: #2a2a2a;
+    color: #eee;
+}
+
+body.dark-mode .bannerDesc {
+    background: #2a2a2a;
+    color: #eee;
+}
+
+/* Dark mode toggle button */
+.darkModeToggle {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    cursor: pointer;
+    font-size: 24px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    transition: all 0.3s ease;
+    z-index: 1500;
+}
+
+.darkModeToggle:hover {
+    box-shadow: 0 6px 25px rgba(102,126,234,0.6);
+    transform: scale(1.1);
+}
+
+/* Account Slide */
+.accountSlide {
+    position: fixed;
+    right: -380px;
+    top: 0;
+    width: 350px;
+    height: 100%;
+    background: #f9f9f9;
+    box-shadow: -5px 0 25px rgba(0,0,0,0.3);
+    padding: 25px;
+    transition: right 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    z-index: 2000;
+}
+
+body.dark-mode .accountSlide {
+    background: #2a2a2a;
+}
+
+.accountSlide.show {
+    right: 0;
+}
+
+.accountSlide h2 {
+    margin-bottom: 20px;
+    color: #333;
+    font-size: 24px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+body.dark-mode .accountSlide h2 {
+    color: #eee;
+}
+
+.closeSlide {
+    background: none;
+    border: none;
+    font-size: 30px;
+    cursor: pointer;
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    color: #666;
+    transition: color 0.2s ease;
+}
+
+.closeSlide:hover {
+    color: #333;
+}
+
+body.dark-mode .closeSlide {
+    color: #ccc;
+}
+
+body.dark-mode .closeSlide:hover {
+    color: #fff;
+}
+
+.profileInfo, .orderHistory {
+    margin: 20px 0;
+    padding: 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+body.dark-mode .profileInfo, 
+body.dark-mode .orderHistory {
+    background: #1a1a1a;
+    color: #eee;
+}
+
+.logoutBtn {
+    margin-top: 25px;
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(135deg, #ff4757 0%, #ff3838 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.logoutBtn:hover {
+    box-shadow: 0 4px 15px rgba(255,71,87,0.6);
+    transform: translateY(-2px);
+}
+
+/* Menu Container */
+.menuContainer {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.menuTitle {
+    text-align: center;
+    font-size: 3em;
+    margin: 30px 0;
+    background: linear-gradient(135deg, #007bff 0%, #00d4ff 100%);
+    background-size: 200% auto;
+    background-clip: text;
+    color: transparent;
+    animation: shimmer 3s linear infinite;
+    font-weight: bold;
+}
+
+/* Banner Slider */
+.bannerSliderContainer {
+    position: relative;
+    text-align: center;
+    margin: 40px auto;
+    max-width: 700px;
+}
+
+.bannerSlider {
+    position: relative;
+    overflow: hidden;
+    border-radius: 16px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+}
+
+.bannerSlide {
+    width: 100%;
+    height: 350px;
+    object-fit: cover;
+    display: none;
+    transition: opacity 0.8s ease-in-out;
+}
+
+.bannerSlide.active {
+    display: block;
+    opacity: 1;
+    animation: slideIn 0.8s ease-in-out;
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: scale(1.05); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.bannerDesc {
+    margin-top: 20px;
+    font-size: 18px;
+    padding: 15px 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    font-style: italic;
+}
+
+/* Menu Items */
+.menuList {
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 25px;
+    padding: 40px 20px;
+}
+
+.menuList li {
+    background: #fff;
+    padding: 20px;
+    border-radius: 16px;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.menuList li::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(0,123,255,0.1), transparent);
+    transition: left 0.5s ease;
+}
+
+.menuList li:hover::before {
+    left: 100%;
+}
+
+.menuList li:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 12px 35px rgba(0,123,255,0.3);
+}
+
+.menuList img {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 50%;
+    margin-bottom: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    transition: transform 0.3s ease;
+}
+
+.menuList li:hover img {
+    transform: scale(1.1);
+}
+
+.menuItemName {
+    font-size: 20px;
+    margin: 12px 0;
+    font-weight: bold;
+    color: #333;
+}
+
+body.dark-mode .menuItemName {
+    color: #eee;
+}
+
+.menuItemPrice {
+    color: #007bff;
+    font-weight: bold;
+    font-size: 18px;
+    margin: 8px 0;
+}
+
+.menuItemCategory {
+    font-size: 14px;
+    color: #666;
+    font-style: italic;
+}
+
+body.dark-mode .menuItemCategory {
+    color: #ccc;
+}
+
+/* Stars for reviews */
+.stars {
+    margin-top: 10px;
+}
+.star {
+    font-size: 18px;
+    color: #1c1c3c; /* dark blue shadowy stars */
+    text-shadow: 0 0 6px rgba(0,0,80,0.6);
+}
+.star.filled {
+    color: #3a5eff;
+    text-shadow: 0 0 12px rgba(0,50,200,0.9);
+}
+
+/* Side sliders for upcoming products */
+#upcomingLeft, #upcomingRight {
+    position: fixed;
+    top: 120px;
+    width: 180px;
+    height: 260px;
+    background: rgba(20,20,20,0.9);
+    border-radius: 12px;
+    padding: 10px;
+    text-align: center;
+    color: white;
+    animation: fadeIn 1s ease-in-out;
+    overflow: hidden;
+    z-index: 1100;
+}
+#upcomingLeft { left: 10px; }
+#upcomingRight { right: 10px; }
+
+#upcomingLeft img, #upcomingRight img {
+    width: 100%;
+    border-radius: 8px;
+    margin-bottom: 6px;
+}
+
+.upcomingName {
+    font-weight: bold;
+    margin: 4px 0;
+    font-size: 14px;
+}
+
+.upcomingSoon {
+    font-size: 12px;
+    background: linear-gradient(90deg, #fff, #00f, #0ff, #fff);
+    background-size: 200% auto;
+    background-clip: text;
+    color: transparent;
+    animation: shimmer 3s linear infinite;
+}
+
+@keyframes shimmer {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .navbar {
+        padding: 8px 15px;
+    }
+
+    .navLinks {
+        display: none;
+    }
+
+    .menuTitle {
+        font-size: 2.2em;
+    }
+
+    .bannerSlide {
+        height: 250px;
+    }
+
+    .menuList {
+        grid-template-columns: 1fr;
+        gap: 20px;
+        padding: 20px 10px;
+    }
+
+    .accountSlide {
+        width: 90%;
+        right: -90%;
+    }
+
+    #upcomingLeft, #upcomingRight {
+        display: none; /* Hide sliders on mobile */
+    }
+}

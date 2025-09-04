@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Indumilk Delights - Mini Jeux</title>
+    <script>
+        // Immediately-invoked function to prevent FOUC (Flash of Unstyled Content)
+        // when switching to dark mode. This script runs before the page is rendered.
+        (function() {
+            try {
+                const theme = localStorage.getItem('theme');
+                // If dark mode is stored in localStorage, apply the 'dark-mode' class to the <html> element.
+                if (theme === 'dark') {
+                    document.documentElement.classList.add('dark-mode');
+                }
+            } catch (e) {}
+        })();
+    </script>
+    <link rel="stylesheet" href="minigame.css">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="minigame.html" class="logo" style="display:flex;align-items:center;">
+            <img src="Indumilk.png" alt="Indumilk Logo" style="height:58px;vertical-align:middle;">
+        </a>
+        <div class="navLinks">
+            <a id="btn-menu" href="menu.html">Menu</a>
+            <a id="btn-produit" href="products.html">Produit</a>
+            <a id="btn-games" class="active" href="minigame.html">Mini Jeux</a>
+            <a id="btn-history" href="history.html">Histoire</a>
+            <a id="btn-contact" href="contact.html">Contact</a>
+        </div>
+        <div class="langSelect">
+            <button class="langIcon" onclick="toggleLangDropdown()">🌐</button>
+            <div class="langDropdown" id="langDropdown">
+                <button onclick="setLang('fr')">Français</button>
+                <button onclick="setLang('en')">English</button>
+                <button onclick="setLang('ar')">العربية</button>
+            </div>
+        </div>
+        <button class="accountHub" onclick="showAccount()">👤</button>
+    </nav>
+
+    <div class="accountSlide" id="accountSlide">
+        <button class="closeSlide" onclick="closeAccount()">×</button>
+        <h2 id="profileTitle">Profil</h2>
+        <div class="profileInfo" id="profileInfo">
+            <p>Nom: Utilisateur Invité</p>
+            <p>Email: guest@indumilk.com</p>
+            <p>Membre depuis: 2024</p>
+        </div>
+        <div class="orderHistory" id="orderHistory">
+            <h3>Historique des commandes</h3>
+            <p>Aucune commande récente</p>
+        </div>
+        <button class="logoutBtn" id="logoutBtn" onclick="logout()">Déconnexion</button>
+    </div>
+
+    <!-- Games Container -->
+    <div class="gamesContainer">
+        <h1 class="gamesTitle" id="gamesTitle">Mini Jeux Indumilk</h1>
+        
+        <!-- Score Display -->
+        <div class="scoreDisplay" id="scoreDisplay">
+            <div class="currentScore">
+                <span id="scoreLabel">Score:</span>
+                <span id="currentScore">0</span>
+            </div>
+            <div class="bestScore">
+                <span id="bestLabel">Meilleur:</span>
+                <span id="bestScore">0</span>
+            </div>
+        </div>
+
+        <!-- Game Selection -->
+        <div class="gameSelection" id="gameSelection">
+            <div class="gameCard active" data-game="memory">
+                <div class="gameIcon">🧠</div>
+                <h3 id="memoryGameTitle">Jeu de Mémoire</h3>
+                <p id="memoryGameDesc">Mémorisez les produits et trouvez les paires!</p>
+            </div>
+            <div class="gameCard" data-game="quiz">
+                <div class="gameIcon">❓</div>
+                <h3 id="quizGameTitle">Quiz Produits</h3>
+                <p id="quizGameDesc">Testez vos connaissances sur nos produits!</p>
+            </div>
+            <div class="gameCard" data-game="matching">
+                <div class="gameIcon">🎯</div>
+                <h3 id="matchingGameTitle">Association</h3>
+                <p id="matchingGameDesc">Associez les produits à leurs descriptions!</p>
+            </div>
+        </div>
+
+        <!-- Memory Game Area -->
+        <div class="gameArea" id="memoryGameArea">
+            <div class="gameHeader">
+                <h2 id="memoryTitle">Jeu de Mémoire</h2>
+                <p id="memoryInstructions">Mémorisez les positions des produits, puis trouvez les paires!</p>
+                <div class="gameControls">
+                    <button class="startBtn" id="memoryStart">Commencer</button>
+                    <button class="resetBtn" id="memoryReset" onclick="resetMemoryGame()">Recommencer</button>
+                </div>
+            </div>
+            <div class="gameStatus" id="gameStatus"></div>
+            <div class="memoryGrid" id="memoryGrid">
+                <!-- Memory cards will be populated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Quiz Game Area -->
+        <div class="gameArea hidden" id="quizGameArea">
+            <div class="gameHeader">
+                <h2 id="quizTitle">Quiz Produits</h2>
+                <p id="quizInstructions">Répondez correctement aux questions sur nos produits!</p>
+                <div class="gameControls">
+                    <button class="startBtn" id="quizStart">Commencer Quiz</button>
+                    <button class="resetBtn" id="quizReset" onclick="resetQuizGame()">Recommencer</button>
+                </div>
+            </div>
+            <div class="quizContent" id="quizContent">
+                <div class="questionCard" id="questionCard">
+                    <h3 id="questionText">Question apparaîtra ici</h3>
+                    <div class="answerOptions" id="answerOptions">
+                        <!-- Options will be populated by JavaScript -->
+                    </div>
+                </div>
+                <div class="quizProgress" id="quizProgress">
+                    <div class="progressBar">
+                        <div class="progressFill" id="progressFill"></div>
+                    </div>
+                    <span id="questionCounter">Question 1/10</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Matching Game Area -->
+        <div class="gameArea hidden" id="matchingGameArea">
+            <div class="gameHeader">
+                <h2 id="matchingTitle">Jeu d'Association</h2>
+                <p id="matchingInstructions">Glissez les produits vers leurs descriptions correspondantes!</p>
+                <div class="gameControls">
+                    <button class="startBtn" id="matchingStart">Commencer Association</button>
+                    <button class="resetBtn" id="matchingReset" onclick="resetMatchingGame()">Recommencer</button>
+                </div>
+            </div>
+            <div class="matchingContent" id="matchingContent">
+                <div class="productsColumn" id="productsColumn">
+                    <h4>Produits</h4>
+                    <div class="draggableItems" id="draggableItems">
+                        <!-- Draggable items will be populated by JavaScript -->
+                    </div>
+                </div>
+                <div class="descriptionsColumn" id="descriptionsColumn">
+                    <h4>Descriptions</h4>
+                    <div class="dropZones" id="dropZones">
+                        <!-- Drop zones will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div class="successModal" id="successModal">
+        <div class="successModalContent">
+            <div class="successHeader">
+                <h2 id="successTitle">🎉 Félicitations! 🎉</h2>
+                <div class="trophy-animation">🏆</div>
+            </div>
+            <div class="successBody">
+                <p id="successMessage">Vous avez terminé le jeu avec succès!</p>
+                <div class="scoreResult" id="scoreResult">
+                    <div class="finalScore">Score Final: <span id="finalScoreValue">0</span></div>
+                    <div class="timeBonus" id="timeBonus">Bonus Temps: +<span id="timeBonusValue">0</span></div>
+                </div>
+                <div class="coupon-card" id="couponCard">
+                    <div class="coupon-discount">-10% OFF</div>
+                    <p class="coupon-description" id="couponDescription">Réduction sur un produit de votre choix</p>
+                    <div class="coupon-code" id="couponCode">GAME2024</div>
+                </div>
+                <div class="modalActions">
+                    <button class="primaryBtn" id="applyCouponBtn" onclick="applyCouponToCart()">Appliquer au Panier</button>
+                    <button class="secondaryBtn" id="playAgainBtn" onclick="playAgain()">Rejouer</button>
+                    <button class="closeBtn" id="closeSuccessBtn" onclick="closeSuccessModal()">Fermer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Cart Button -->
+    <button class="floatingCart" onclick="window.location.href='products.html'" id="floatingCart">
+        🛒 <span id="cartCount">0</span>
+    </button>
+
+    <!-- Dark Mode Toggle -->
+    <button class="darkModeToggle" onclick="toggleDarkMode()" id="darkModeToggle">🌙</button>
+
+    <script src="minigame.js"></script>
+</body>
+</html>

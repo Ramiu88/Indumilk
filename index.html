@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Indumilk - Connexion / Inscription</title>
+    <link rel="stylesheet" href="index.css">
+</head>
+<body class="light-mode">
+    <div class="authContainer">
+        <div class="authLogo">
+            <img src="indumilk.png" alt="Indumilk Logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+            <h1 style="display: none;">Indumilk</h1>
+        </div>
+        
+        <div class="authTabs">
+            <button class="authTab active" id="loginTab" onclick="showTab('login')">Connexion</button>
+            <button class="authTab" id="signupTab" onclick="showTab('signup')">Inscription</button>
+        </div>
+        
+        <form class="authForm" id="loginForm" onsubmit="return login(event)">
+            <input type="email" id="loginEmail" placeholder="Email" required>
+            <input type="password" id="loginPassword" placeholder="Mot de passe" required>
+            <button class="authBtn" type="submit" id="loginBtn">Se connecter</button>
+        </form>
+        
+        <form class="authForm hidden" id="signupForm" onsubmit="return signup(event)">
+            <input type="text" id="signupName" placeholder="Nom complet" required minlength="2">
+            <input type="email" id="signupEmail" placeholder="Email" required>
+            <input type="password" id="signupPassword" placeholder="Mot de passe (min. 6 caractères)" required minlength="6">
+            <button class="authBtn" type="submit" id="signupBtn">S'inscrire</button>
+        </form>
+        
+        <div class="authMsg" id="authMsg"></div>
+        
+        <div class="langSelect">
+            <span class="langIcon" onclick="toggleLangDropdown()">🌐</span>
+            <div class="langDropdown" id="langDropdown">
+                <button type="button" onclick="setLang('fr')">Français</button>
+                <button type="button" onclick="setLang('en')">English</button>
+                <button type="button" onclick="setLang('ar')">العربية</button>
+            </div>
+        </div>
+        
+        <button class="darkModeToggle" id="darkModeToggle" onclick="toggleDarkMode()">🌙</button>
+    </div>
+
+    <script src="index.js"></script>
+</body>
+</html>
