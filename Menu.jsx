@@ -60,9 +60,13 @@ const upcomingProducts = [
 let currentLang = 'fr';
 let currentSlide = 0;
 let isDarkMode = false;
+let isInitialized = false;
 
 // Init
 function init() {
+    if (isInitialized) return;
+    isInitialized = true;
+    
     loadSettings();
     populateMenu();
     startSlider();
@@ -204,10 +208,14 @@ function startUpcomingSliders() {
 // Language
 function toggleLangDropdown() {
     const dropdown = document.getElementById('langDropdown');
-    if (dropdown) dropdown.classList.toggle('show');
+    if (dropdown) {
+        dropdown.classList.toggle('show');
+    }
 }
 
 function setLang(lang) {
+    if (!translations[lang]) return;
+    
     currentLang = lang;
     localStorage.setItem('selectedLanguage', lang);
     updateLanguage();
@@ -322,4 +330,8 @@ document.addEventListener('click', function(event) {
 });
 
 // Init on load
-document.addEventListener('DOMContentLoaded', init);
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+} else {
+    init();
+}

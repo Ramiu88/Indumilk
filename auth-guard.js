@@ -11,7 +11,8 @@
     const currentPage = window.location.pathname;
     const isLoginPage = currentPage === '/' || 
                        currentPage === '/index.html' || 
-                       currentPage.endsWith('index.html');
+                       currentPage.endsWith('index.html') ||
+                       currentPage === '';
     
     if (isLoginPage) {
         // On login page, check if user is already logged in
@@ -41,6 +42,7 @@
             const user = localStorage.getItem('indumilk_currentUser');
             return user ? JSON.parse(user) : null;
         } catch (e) {
+            console.error('Error parsing user data:', e);
             return null;
         }
     }
@@ -63,6 +65,7 @@
             
             return true;
         } catch (e) {
+            console.error('Error validating session:', e);
             clearAuthData();
             return false;
         }
@@ -97,15 +100,20 @@
         activityTimer = setTimeout(extendSession, 5 * 60 * 1000); // Extend after 5 minutes of activity
     }
     
-    // Add activity listeners
-    document.addEventListener('DOMContentLoaded', function() {
+    // Add activity listeners when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            ['click', 'keypress', 'scroll', 'touchstart'].forEach(event => {
+                document.addEventListener(event, trackActivity, true);
+            });
+            trackActivity();
+        });
+    } else {
         ['click', 'keypress', 'scroll', 'touchstart'].forEach(event => {
             document.addEventListener(event, trackActivity, true);
         });
-        
-        // Initial activity tracking
         trackActivity();
-    });
+    }
     
     // Check session validity periodically
     setInterval(function() {

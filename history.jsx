@@ -1,6 +1,3 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Search, Filter, Calendar, Package, Heart, Eye, Download, RefreshCw, TrendingUp, ShoppingBag, Star } from 'lucide-react';
-
 // Translations for multilingual support
 const translations = {
   fr: {
@@ -152,8 +149,22 @@ const translations = {
   }
 };
 
+// State variables
+let currentLang = 'fr';
+let isDarkMode = false;
+let orders = [];
+let searchTerm = '';
+let dateFilter = 'all';
+let statusFilter = 'all';
+let sortBy = 'newest';
+let selectedOrder = null;
+let favoriteProducts = new Set([1, 3, 5]);
+let currentPage = 1;
+let isInitialized = false;
+const ordersPerPage = 6;
+
 // Generate sample purchase data
-const generateSamplePurchases = () => {
+function generateSamplePurchases() {
   const productNames = {
     fr: ["Ordinateur Portable", "Smartphone", "Écouteurs Bluetooth", "Montre Connectée", "Tablette", "Appareil Photo", "Clavier Mécanique", "Souris Gaming"],
     en: ["Laptop Computer", "Smartphone", "Bluetooth Headphones", "Smart Watch", "Tablet", "Digital Camera", "Mechanical Keyboard", "Gaming Mouse"],
@@ -206,26 +217,88 @@ const generateSamplePurchases = () => {
   }
   
   return orders.sort((a, b) => b.date - a.date);
-};
+}
 
-// Main Purchase History Component
-const PurchaseHistoryTracker = () => {
-  const [currentLang, setCurrentLang] = useState('en');
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [orders, setOrders] = useState(generateSamplePurchases());
-  const [searchTerm, setSearchTerm] = useState('');
-  const [dateFilter, setDateFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [sortBy, setSortBy] = useState('newest');
-  const [selectedOrder, setSelectedOrder] = useState(null);
-  const [favoriteProducts, setFavoriteProducts] = useState(new Set([1, 3, 5]));
-  const [currentPage, setCurrentPage] = useState(1);
-  const ordersPerPage = 6;
+// Initialize the application
+function init() {
+    if (isInitialized) return;
+    isInitialized = true;
+    
+    loadSettings();
+    orders = generateSamplePurchases();
+    updateLanguage();
+    setupEventListeners();
+    updateDisplay();
+}
 
-  const t = translations[currentLang];
+// Load saved settings
+function loadSettings() {
+    const savedLang = localStorage.getItem('selectedLanguage');
+    if (savedLang && translations[savedLang]) {
+        currentLang = savedLang;
+    }
 
-  // Calculate analytics and spending summary
-  const spendingAnalytics = useMemo(() => {
+    const savedDarkMode = localStorage.getItem('darkMode');
+    if (savedDarkMode === 'enabled') {
+        isDarkMode = true;
+        document.body.classList.add('dark-mode');
+        const toggle = document.getElementById('darkModeToggle');
+        if (toggle) toggle.textContent = '☀️';
+    }
+}
+
+// Setup event listeners
+function setupEventListeners() {
+    // Search input
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            searchTerm = e.target.value;
+            currentPage = 1;
+            updateDisplay();
+        });
+    }
+
+    // Filter selects
+    const dateFilterEl = document.getElementById('dateFilter');
+    if (dateFilterEl) {
+        dateFilterEl.addEventListener('change', (e) => {
+            dateFilter = e.target.value;
+            currentPage = 1;
+            updateDisplay();
+        });
+    }
+
+    const statusFilterEl = document.getElementById('statusFilter');
+    if (statusFilterEl) {
+        statusFilterEl.addEventListener('change', (e) => {
+            statusFilter = e.target.value;
+            currentPage = 1;
+            updateDisplay();
+        });
+    }
+
+    const sortByEl = document.getElementById('sortBy');
+    if (sortByEl) {
+        sortByEl.addEventListener('change', (e) => {
+            sortBy = e.target.value;
+            updateDisplay();
+        });
+    }
+
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', function(event) {
+        const langSelect = document.querySelector('.langSelect');
+        const dropdown = document.getElementById('langDropdown');
+
+        if (langSelect && dropdown && !langSelect.contains(event.target)) {
+            dropdown.classList.remove('show');
+        }
+    });
+}
+
+// Calculate analytics and spending summary
+function calculateSpendingAnalytics() {
     const completedOrders = orders.filter(order => order.status === 'completed');
     const totalSpent = completedOrders.reduce((sum, order) => sum + order.total, 0);
     const averageOrder = completedOrders.length > 0 ? totalSpent / completedOrders.length : 0;
@@ -233,125 +306,379 @@ const PurchaseHistoryTracker = () => {
     // Calculate favorite items based on purchase frequency
     const productCounts = {};
     completedOrders.forEach(order => {
-      order.items.forEach(item => {
-        const key = item.name[currentLang];
-        productCounts[key] = (productCounts[key] || 0) + item.quantity;
-      });
+        order.items.forEach(item => {
+            const key = item.name[currentLang];
+            productCounts[key] = (productCounts[key] || 0) + item.quantity;
+        });
     });
 
     const topProduct = Object.entries(productCounts)
-      .sort(([,a], [,b]) => b - a)[0];
+        .sort(([,a], [,b]) => b - a)[0];
 
     return {
-      totalOrders: orders.length,
-      completedOrders: completedOrders.length,
-      totalSpent,
-      averageOrder,
-      favoriteItem: topProduct ? topProduct[0] : 'N/A'
+        totalOrders: orders.length,
+        completedOrders: completedOrders.length,
+        totalSpent,
+        averageOrder,
+        favoriteItem: topProduct ? topProduct[0] : 'N/A'
     };
-  }, [orders, currentLang]);
+}
 
-  // Filter and sort orders based on user criteria
-  const filteredOrders = useMemo(() => {
+// Filter and sort orders based on user criteria
+function getFilteredOrders() {
     let filtered = orders.filter(order => {
-      // Search filter - check order ID and item names
-      if (searchTerm) {
-        const searchLower = searchTerm.toLowerCase();
-        const matchesId = order.id.toString().includes(searchLower);
-        const matchesItems = order.items.some(item => 
-          item.name[currentLang].toLowerCase().includes(searchLower)
-        );
-        if (!matchesId && !matchesItems) return false;
-      }
-
-      // Date filter
-      if (dateFilter !== 'all') {
-        const orderDate = new Date(order.date);
-        const now = new Date();
-        
-        switch (dateFilter) {
-          case 'today':
-            if (orderDate.toDateString() !== now.toDateString()) return false;
-            break;
-          case 'thisWeek':
-            const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-            if (orderDate < weekAgo) return false;
-            break;
-          case 'thisMonth':
-            if (orderDate.getMonth() !== now.getMonth() || orderDate.getFullYear() !== now.getFullYear()) return false;
-            break;
-          case 'thisYear':
-            if (orderDate.getFullYear() !== now.getFullYear()) return false;
-            break;
-          case 'last30Days':
-            const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-            if (orderDate < thirtyDaysAgo) return false;
-            break;
-          case 'last90Days':
-            const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
-            if (orderDate < ninetyDaysAgo) return false;
-            break;
+        // Search filter - check order ID and item names
+        if (searchTerm) {
+            const searchLower = searchTerm.toLowerCase();
+            const matchesId = order.id.toString().includes(searchLower);
+            const matchesItems = order.items.some(item => 
+                item.name[currentLang].toLowerCase().includes(searchLower)
+            );
+            if (!matchesId && !matchesItems) return false;
         }
-      }
 
-      // Status filter
-      if (statusFilter !== 'all' && order.status !== statusFilter) return false;
+        // Date filter
+        if (dateFilter !== 'all') {
+            const orderDate = new Date(order.date);
+            const now = new Date();
+            
+            switch (dateFilter) {
+                case 'today':
+                    if (orderDate.toDateString() !== now.toDateString()) return false;
+                    break;
+                case 'thisWeek':
+                    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                    if (orderDate < weekAgo) return false;
+                    break;
+                case 'thisMonth':
+                    if (orderDate.getMonth() !== now.getMonth() || orderDate.getFullYear() !== now.getFullYear()) return false;
+                    break;
+                case 'thisYear':
+                    if (orderDate.getFullYear() !== now.getFullYear()) return false;
+                    break;
+                case 'last30Days':
+                    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+                    if (orderDate < thirtyDaysAgo) return false;
+                    break;
+                case 'last90Days':
+                    const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+                    if (orderDate < ninetyDaysAgo) return false;
+                    break;
+            }
+        }
 
-      return true;
+        // Status filter
+        if (statusFilter !== 'all' && order.status !== statusFilter) return false;
+
+        return true;
     });
 
     // Sort orders
     switch (sortBy) {
-      case 'oldest':
-        filtered.sort((a, b) => a.date - b.date);
-        break;
-      case 'highest':
-        filtered.sort((a, b) => b.total - a.total);
-        break;
-      case 'lowest':
-        filtered.sort((a, b) => a.total - b.total);
-        break;
-      default: // newest
-        filtered.sort((a, b) => b.date - a.date);
+        case 'oldest':
+            filtered.sort((a, b) => a.date - b.date);
+            break;
+        case 'highest':
+            filtered.sort((a, b) => b.total - a.total);
+            break;
+        case 'lowest':
+            filtered.sort((a, b) => a.total - b.total);
+            break;
+        default: // newest
+            filtered.sort((a, b) => b.date - a.date);
     }
 
     return filtered;
-  }, [orders, searchTerm, dateFilter, statusFilter, sortBy, currentLang]);
+}
 
-  // Pagination
-  const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
-  const paginatedOrders = filteredOrders.slice(
-    (currentPage - 1) * ordersPerPage,
-    currentPage * ordersPerPage
-  );
+// Update the display
+function updateDisplay() {
+    updateSummaryCards();
+    updateOrdersList();
+    updateShowingResults();
+}
 
-  // Event handlers
-  const clearFilters = () => {
-    setSearchTerm('');
-    setDateFilter('all');
-    setStatusFilter('all');
-    setSortBy('newest');
-    setCurrentPage(1);
-  };
+// Update summary cards
+function updateSummaryCards() {
+    const analytics = calculateSpendingAnalytics();
+    
+    const totalOrdersEl = document.getElementById('totalOrders');
+    const totalSpentEl = document.getElementById('totalSpent');
+    const favoriteItemEl = document.getElementById('favoriteItem');
+    const averageOrderEl = document.getElementById('averageOrder');
+    
+    if (totalOrdersEl) totalOrdersEl.textContent = analytics.totalOrders;
+    if (totalSpentEl) totalSpentEl.textContent = `${analytics.totalSpent} DH`;
+    if (favoriteItemEl) favoriteItemEl.textContent = analytics.favoriteItem;
+    if (averageOrderEl) averageOrderEl.textContent = `${Math.round(analytics.averageOrder)} DH`;
+}
 
-  const toggleFavorite = (productId) => {
-    setFavoriteProducts(prev => {
-      const newFavorites = new Set(prev);
-      if (newFavorites.has(productId)) {
-        newFavorites.delete(productId);
-      } else {
-        newFavorites.add(productId);
-      }
-      return newFavorites;
+// Update orders list
+function updateOrdersList() {
+    const filteredOrders = getFilteredOrders();
+    const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
+    const paginatedOrders = filteredOrders.slice(
+        (currentPage - 1) * ordersPerPage,
+        currentPage * ordersPerPage
+    );
+
+    const ordersList = document.getElementById('ordersList');
+    const noOrders = document.getElementById('noOrders');
+    const pagination = document.getElementById('pagination');
+
+    if (!ordersList) return;
+
+    if (paginatedOrders.length === 0) {
+        ordersList.style.display = 'none';
+        if (noOrders) noOrders.style.display = 'block';
+        if (pagination) pagination.style.display = 'none';
+        return;
+    }
+
+    ordersList.style.display = 'grid';
+    if (noOrders) noOrders.style.display = 'none';
+
+    // Render orders
+    ordersList.innerHTML = '';
+    paginatedOrders.forEach(order => {
+        const orderCard = createOrderCard(order);
+        ordersList.appendChild(orderCard);
     });
-  };
 
-  const exportOrders = () => {
+    // Update pagination
+    updatePagination(totalPages);
+}
+
+// Create order card
+function createOrderCard(order) {
+    const t = translations[currentLang];
+    const formattedDate = order.date.toLocaleDateString(currentLang === 'ar' ? 'ar-MA' : currentLang);
+    
+    const card = document.createElement('div');
+    card.className = 'orderCard';
+    card.onclick = () => openOrderModal(order);
+
+    const statusClass = `status-${order.status}`;
+    const statusText = t[order.status] || order.status;
+
+    card.innerHTML = `
+        <div class="orderHeader">
+            <div>
+                <div class="orderNumber">${t.orderNumber}${order.id}</div>
+                <div class="orderDate">${formattedDate}</div>
+                ${order.trackingNumber ? `<div style="font-size: 12px; color: #667eea; margin-top: 4px;">Tracking: ${order.trackingNumber}</div>` : ''}
+            </div>
+            <div class="statusBadge ${statusClass}">${statusText}</div>
+        </div>
+        
+        <div class="orderItems">
+            ${order.items.slice(0, 2).map(item => `
+                <div class="orderItem">
+                    <img src="${item.image}" alt="${item.name[currentLang]}" class="itemImage" 
+                         onerror="this.src='https://images.pexels.com/photos/416978/pexels-photo-416978.jpeg?auto=compress&cs=tinysrgb&w=100'">
+                    <div class="itemInfo">
+                        <div class="itemName">${item.name[currentLang]}</div>
+                        <div class="itemDetails">${t.quantity} ${item.quantity} × ${item.price} DH</div>
+                    </div>
+                    <button class="favoriteBtn ${favoriteProducts.has(item.id) ? 'active' : ''}" 
+                            onclick="event.stopPropagation(); toggleFavorite(${item.id})">
+                        ❤️
+                    </button>
+                </div>
+            `).join('')}
+            ${order.items.length > 2 ? `<div style="text-align: center; color: #666; font-size: 14px; margin-top: 10px;">+${order.items.length - 2} more ${t.itemsCount}</div>` : ''}
+        </div>
+        
+        <div class="orderFooter">
+            <div class="itemCount">${order.items.reduce((sum, item) => sum + item.quantity, 0)} ${t.itemsCount}</div>
+            <div class="orderTotal">${order.total} DH</div>
+        </div>
+        
+        <button class="viewDetailsBtn" onclick="event.stopPropagation(); openOrderModal(order)">
+            👁️ ${t.viewDetails}
+        </button>
+    `;
+
+    return card;
+}
+
+// Update pagination
+function updatePagination(totalPages) {
+    const pagination = document.getElementById('pagination');
+    if (!pagination || totalPages <= 1) {
+        if (pagination) pagination.style.display = 'none';
+        return;
+    }
+
+    pagination.style.display = 'flex';
+    pagination.innerHTML = '';
+
+    // Previous button
+    const prevBtn = document.createElement('button');
+    prevBtn.className = 'pageBtn';
+    prevBtn.textContent = '‹';
+    prevBtn.disabled = currentPage === 1;
+    prevBtn.onclick = () => {
+        if (currentPage > 1) {
+            currentPage--;
+            updateDisplay();
+        }
+    };
+    pagination.appendChild(prevBtn);
+
+    // Page numbers
+    for (let i = 1; i <= totalPages; i++) {
+        const pageBtn = document.createElement('button');
+        pageBtn.className = `pageBtn ${i === currentPage ? 'active' : ''}`;
+        pageBtn.textContent = i;
+        pageBtn.onclick = () => {
+            currentPage = i;
+            updateDisplay();
+        };
+        pagination.appendChild(pageBtn);
+    }
+
+    // Next button
+    const nextBtn = document.createElement('button');
+    nextBtn.className = 'pageBtn';
+    nextBtn.textContent = '›';
+    nextBtn.disabled = currentPage === totalPages;
+    nextBtn.onclick = () => {
+        if (currentPage < totalPages) {
+            currentPage++;
+            updateDisplay();
+        }
+    };
+    pagination.appendChild(nextBtn);
+}
+
+// Update showing results text
+function updateShowingResults() {
+    const filteredOrders = getFilteredOrders();
+    const showingResults = document.getElementById('showingResults');
+    if (showingResults) {
+        const t = translations[currentLang];
+        showingResults.textContent = t.showingResults.replace('{count}', filteredOrders.length);
+    }
+}
+
+// Open order modal
+function openOrderModal(order) {
+    selectedOrder = order;
+    const modal = document.getElementById('transactionModal');
+    if (modal) {
+        modal.classList.add('active');
+        renderOrderModal(order);
+    }
+}
+
+// Render order modal
+function renderOrderModal(order) {
+    const modalBody = document.getElementById('modalBody');
+    if (!modalBody) return;
+
+    const t = translations[currentLang];
+    const formattedDate = order.date.toLocaleDateString(currentLang === 'ar' ? 'ar-MA' : currentLang);
+    const formattedTime = order.date.toLocaleTimeString(currentLang === 'ar' ? 'ar-MA' : currentLang, { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+    });
+
+    modalBody.innerHTML = `
+        <div style="margin-bottom: 30px;">
+            <h3 style="color: #667eea; font-size: 24px; margin-bottom: 10px;">${t.orderNumber}${order.id}</h3>
+            <p style="color: #666; margin-bottom: 5px;">${formattedDate} at ${formattedTime}</p>
+            ${order.trackingNumber ? `<p style="color: #667eea;">Tracking: ${order.trackingNumber}</p>` : ''}
+            <div class="statusBadge status-${order.status}" style="margin-top: 10px;">${t[order.status] || order.status}</div>
+        </div>
+        
+        <div style="margin-bottom: 30px;">
+            <h4 style="margin-bottom: 20px; font-size: 18px;">Purchased Items</h4>
+            ${order.items.map(item => `
+                <div style="display: flex; align-items: center; gap: 15px; padding: 15px; background: rgba(0,0,0,0.05); border-radius: 12px; margin-bottom: 15px;">
+                    <img src="${item.image}" alt="${item.name[currentLang]}" 
+                         style="width: 60px; height: 60px; border-radius: 8px; object-fit: cover;"
+                         onerror="this.src='https://images.pexels.com/photos/416978/pexels-photo-416978.jpeg?auto=compress&cs=tinysrgb&w=100'">
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600; margin-bottom: 5px;">${item.name[currentLang]}</div>
+                        <div style="color: #666; font-size: 14px;">
+                            ${t.quantity} ${item.quantity}<br>
+                            ${t.price} ${item.price} DH<br>
+                            ${t.subtotal} ${item.quantity * item.price} DH
+                        </div>
+                    </div>
+                    <button onclick="toggleFavorite(${item.id})" 
+                            style="background: none; border: none; font-size: 20px; cursor: pointer; color: ${favoriteProducts.has(item.id) ? '#ff6b6b' : '#ccc'};">
+                        ❤️
+                    </button>
+                </div>
+            `).join('')}
+        </div>
+        
+        <div style="border-top: 2px solid rgba(0,0,0,0.1); padding-top: 20px; text-align: right;">
+            <div style="font-size: 24px; font-weight: bold; color: #667eea;">
+                ${t.orderTotal} ${order.total} DH
+            </div>
+        </div>
+    `;
+}
+
+// Close order modal
+function closeTransactionModal() {
+    const modal = document.getElementById('transactionModal');
+    if (modal) {
+        modal.classList.remove('active');
+    }
+    selectedOrder = null;
+}
+
+// Toggle favorite
+function toggleFavorite(productId) {
+    if (favoriteProducts.has(productId)) {
+        favoriteProducts.delete(productId);
+    } else {
+        favoriteProducts.add(productId);
+    }
+    
+    // Update display if modal is open
+    if (selectedOrder) {
+        renderOrderModal(selectedOrder);
+    }
+    
+    // Update orders list
+    updateOrdersList();
+}
+
+// Clear filters
+function clearFilters() {
+    searchTerm = '';
+    dateFilter = 'all';
+    statusFilter = 'all';
+    sortBy = 'newest';
+    currentPage = 1;
+    
+    // Update form elements
+    const searchInput = document.getElementById('searchInput');
+    const dateFilterEl = document.getElementById('dateFilter');
+    const statusFilterEl = document.getElementById('statusFilter');
+    const sortByEl = document.getElementById('sortBy');
+    
+    if (searchInput) searchInput.value = '';
+    if (dateFilterEl) dateFilterEl.value = 'all';
+    if (statusFilterEl) statusFilterEl.value = 'all';
+    if (sortByEl) sortByEl.value = 'newest';
+    
+    updateDisplay();
+}
+
+// Export orders
+function exportOrders() {
+    const filteredOrders = getFilteredOrders();
     const csvContent = [
-      'Order ID,Date,Status,Total,Items',
-      ...filteredOrders.map(order => 
-        `${order.id},${order.date.toISOString().split('T')[0]},${order.status},${order.total},"${order.items.map(item => `${item.name[currentLang]} (${item.quantity})`).join('; ')}"`
-      )
+        'Order ID,Date,Status,Total,Items',
+        ...filteredOrders.map(order => 
+            `${order.id},${order.date.toISOString().split('T')[0]},${order.status},${order.total},"${order.items.map(item => `${item.name[currentLang]} (${item.quantity})`).join('; ')}"`
+        )
     ].join('\n');
     
     const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -363,493 +690,205 @@ const PurchaseHistoryTracker = () => {
     a.click();
     document.body.removeChild(a);
     window.URL.revokeObjectURL(url);
-  };
+}
 
-  const StatusBadge = ({ status }) => {
-    const statusColors = {
-      completed: 'bg-green-100 text-green-800 border-green-200',
-      pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-      cancelled: 'bg-red-100 text-red-800 border-red-200',
-      processing: 'bg-blue-100 text-blue-800 border-blue-200',
-      shipped: 'bg-purple-100 text-purple-800 border-purple-200',
-      delivered: 'bg-emerald-100 text-emerald-800 border-emerald-200'
+// Refresh orders
+function refreshOrders() {
+    orders = generateSamplePurchases();
+    updateDisplay();
+}
+
+// Language functions
+function toggleLangDropdown() {
+    const dropdown = document.getElementById('langDropdown');
+    if (dropdown) dropdown.classList.toggle('show');
+}
+
+function setLang(lang) {
+    if (!translations[lang]) return;
+    
+    currentLang = lang;
+    localStorage.setItem('selectedLanguage', lang);
+    updateLanguage();
+    const dropdown = document.getElementById('langDropdown');
+    if (dropdown) dropdown.classList.remove('show');
+}
+
+function updateLanguage() {
+    const t = translations[currentLang];
+
+    // Update page elements
+    const elements = {
+        'pageTitle': t.pageTitle,
+        'totalOrdersLabel': t.totalOrdersLabel,
+        'totalSpentLabel': t.totalSpentLabel,
+        'favoriteItemLabel': t.favoriteItemLabel,
+        'averageOrderLabel': t.averageOrderLabel,
+        'dateFilterLabel': t.dateFilterLabel,
+        'statusFilterLabel': t.statusFilterLabel,
+        'sortByLabel': t.sortByLabel,
+        'clearFiltersBtn': t.clearFiltersBtn,
+        'exportBtn': t.exportBtn,
+        'refreshBtn': t.refreshBtn,
+        'ordersSectionTitle': t.ordersSectionTitle,
+        'noOrdersTitle': t.noOrdersTitle,
+        'noOrdersText': t.noOrdersText,
+        'orderNowBtn': t.orderNowBtn,
+        'modalTitle': t.modalTitle
     };
+
+    Object.entries(elements).forEach(([id, text]) => {
+        const element = document.getElementById(id);
+        if (element) element.textContent = text;
+    });
+
+    // Update search placeholder
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) searchInput.placeholder = t.searchPlaceholder;
+
+    // Update select options
+    updateSelectOptions();
+
+    // Handle RTL for Arabic
+    if (currentLang === 'ar') {
+        document.body.setAttribute('dir', 'rtl');
+        document.body.style.fontFamily = 'Arial, Tahoma, sans-serif';
+    } else {
+        document.body.setAttribute('dir', 'ltr');
+        document.body.style.fontFamily = 'Inter, Segoe UI, sans-serif';
+    }
+
+    // Update display
+    updateDisplay();
+}
+
+// Update select options
+function updateSelectOptions() {
+    const t = translations[currentLang];
     
-    return (
-      <span className={`px-3 py-1 rounded-full text-sm font-medium border ${statusColors[status] || 'bg-gray-100 text-gray-800'}`}>
-        {t[status] || status}
-      </span>
-    );
-  };
+    // Date filter options
+    const dateFilter = document.getElementById('dateFilter');
+    if (dateFilter) {
+        const options = [
+            { value: 'all', text: t.allPeriods },
+            { value: 'today', text: t.today },
+            { value: 'thisWeek', text: t.thisWeek },
+            { value: 'thisMonth', text: t.thisMonth },
+            { value: 'last30Days', text: t.last30Days },
+            { value: 'last90Days', text: t.last90Days },
+            { value: 'thisYear', text: t.thisYear }
+        ];
+        
+        const currentValue = dateFilter.value;
+        dateFilter.innerHTML = '';
+        options.forEach(option => {
+            const optionEl = document.createElement('option');
+            optionEl.value = option.value;
+            optionEl.textContent = option.text;
+            if (option.value === currentValue) optionEl.selected = true;
+            dateFilter.appendChild(optionEl);
+        });
+    }
 
-  const OrderCard = ({ order }) => {
-    const formattedDate = order.date.toLocaleDateString(currentLang === 'ar' ? 'ar-MA' : currentLang);
+    // Status filter options
+    const statusFilter = document.getElementById('statusFilter');
+    if (statusFilter) {
+        const options = [
+            { value: 'all', text: t.allStatuses },
+            { value: 'completed', text: t.completed },
+            { value: 'pending', text: t.pending },
+            { value: 'processing', text: t.processing },
+            { value: 'shipped', text: t.shipped },
+            { value: 'delivered', text: t.delivered },
+            { value: 'cancelled', text: t.cancelled }
+        ];
+        
+        const currentValue = statusFilter.value;
+        statusFilter.innerHTML = '';
+        options.forEach(option => {
+            const optionEl = document.createElement('option');
+            optionEl.value = option.value;
+            optionEl.textContent = option.text;
+            if (option.value === currentValue) optionEl.selected = true;
+            statusFilter.appendChild(optionEl);
+        });
+    }
+
+    // Sort by options
+    const sortBy = document.getElementById('sortBy');
+    if (sortBy) {
+        const options = [
+            { value: 'newest', text: t.sortNewest },
+            { value: 'oldest', text: t.sortOldest },
+            { value: 'highest', text: t.sortHighest },
+            { value: 'lowest', text: t.sortLowest }
+        ];
+        
+        const currentValue = sortBy.value;
+        sortBy.innerHTML = '';
+        options.forEach(option => {
+            const optionEl = document.createElement('option');
+            optionEl.value = option.value;
+            optionEl.textContent = option.text;
+            if (option.value === currentValue) optionEl.selected = true;
+            sortBy.appendChild(optionEl);
+        });
+    }
+}
+
+// Dark mode toggle
+function toggleDarkMode() {
+    isDarkMode = !isDarkMode;
+    document.body.classList.toggle('dark-mode');
+
+    const toggle = document.getElementById('darkModeToggle');
+    if (toggle) {
+        toggle.textContent = isDarkMode ? '☀️' : '🌙';
+    }
+
+    localStorage.setItem('darkMode', isDarkMode ? 'enabled' : 'disabled');
+}
+
+// Account functions
+function showAccount() {
+    const slide = document.getElementById('accountSlide');
+    if (slide) slide.classList.add('show');
+}
+
+function closeAccount() {
+    const slide = document.getElementById('accountSlide');
+    if (slide) slide.classList.remove('show');
+}
+
+// Logout function
+function logout() {
+    const t = translations[currentLang];
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (!logoutBtn) return;
     
-    return (
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 border border-gray-200 dark:border-gray-700 overflow-hidden">
-        <div className="p-6">
-          <div className="flex justify-between items-start mb-4">
-            <div>
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                {t.orderNumber}{order.id}
-              </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">{formattedDate}</p>
-              {order.trackingNumber && (
-                <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                  Tracking: {order.trackingNumber}
-                </p>
-              )}
-            </div>
-            <StatusBadge status={order.status} />
-          </div>
-          
-          <div className="space-y-2 mb-4">
-            {order.items.slice(0, 2).map((item, index) => (
-              <div key={index} className="flex items-center space-x-3">
-                <img 
-                  src={item.image} 
-                  alt={item.name[currentLang]}
-                  className="w-10 h-10 rounded-lg object-cover bg-gray-100"
-                  onError={(e) => {
-                    e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0yMCAxNkMyMS4xIDIwIDIwIDIxLjEgMjAgMjJDMjAgMjIuOSAxOS4xIDIzIDE4IDIzSDE0QzEyLjkgMjMgMTIgMjIuMSAxMiAyMVYxN0MxMiAxNS45IDEyLjkgMTUgMTQgMTVIMThDMTkuMSAxNSAyMCAxNS45IDIwIDE3VjE2WiIgZmlsbD0iIzlDQTNBRiIvPgo8L3N2Zz4K';
-                  }}
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                    {item.name[currentLang]}
-                  </p>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">
-                    {t.quantity} {item.quantity} × ${item.price}
-                  </p>
-                </div>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleFavorite(item.id);
-                  }}
-                  className={`p-1 rounded-full transition-colors ${
-                    favoriteProducts.has(item.id) 
-                      ? 'text-red-500 hover:text-red-600' 
-                      : 'text-gray-400 hover:text-red-500'
-                  }`}
-                >
-                  <Heart size={16} fill={favoriteProducts.has(item.id) ? 'currentColor' : 'none'} />
-                </button>
-              </div>
-            ))}
-            {order.items.length > 2 && (
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                +{order.items.length - 2} more {t.itemsCount}
-              </p>
-            )}
-          </div>
-          
-          <div className="flex justify-between items-center mb-4">
-            <span className="text-xl font-bold text-blue-600 dark:text-blue-400">
-              ${order.total}
-            </span>
-            <span className="text-sm text-gray-600 dark:text-gray-400">
-              {order.items.reduce((sum, item) => sum + item.quantity, 0)} {t.itemsCount}
-            </span>
-          </div>
-          
-          <div className="flex gap-2">
-            <button
-              onClick={() => setSelectedOrder(order)}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
-            >
-              <Eye size={16} />
-              {t.viewDetails}
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const OrderDetailModal = () => {
-    if (!selectedOrder) return null;
+    if (!confirm('Are you sure you want to logout?')) return;
     
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                {t.modalTitle}
-              </h2>
-              <button
-                onClick={() => setSelectedOrder(null)}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-2xl"
-              >
-                ×
-              </button>
-            </div>
-          </div>
-          
-          <div className="p-6">
-            <div className="mb-6">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h3 className="text-xl font-bold text-blue-600 dark:text-blue-400">
-                    {t.orderNumber}{selectedOrder.id}
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-400">
-                    {selectedOrder.date.toLocaleDateString(currentLang === 'ar' ? 'ar-MA' : currentLang)} at{' '}
-                    {selectedOrder.date.toLocaleTimeString(currentLang === 'ar' ? 'ar-MA' : currentLang, { 
-                      hour: '2-digit', 
-                      minute: '2-digit' 
-                    })}
-                  </p>
-                  {selectedOrder.trackingNumber && (
-                    <p className="text-blue-600 dark:text-blue-400 mt-1">
-                      Tracking: {selectedOrder.trackingNumber}
-                    </p>
-                  )}
-                </div>
-                <StatusBadge status={selectedOrder.status} />
-              </div>
-            </div>
-            
-            <div className="mb-6">
-              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                Purchased Items
-              </h4>
-              <div className="space-y-4">
-                {selectedOrder.items.map((item, index) => (
-                  <div key={index} className="flex items-center space-x-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                    <img 
-                      src={item.image} 
-                      alt={item.name[currentLang]}
-                      className="w-16 h-16 rounded-lg object-cover bg-gray-100"
-                      onError={(e) => {
-                        e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0yMCAxNkMyMS4xIDIwIDIwIDIxLjEgMjAgMjJDMjAgMjIuOSAxOS4xIDIzIDE4IDIzSDE0QzEyLjkgMjMgMTIgMjIuMSAxMiAyMVYxN0MxMiAxNS45IDEyLjkgMTUgMTQgMTVIMThDMTkuMSAxNSAyMCAxNS45IDIwIDE3VjE2WiIgZmlsbD0iIzlDQTNBRiIvPgo8L3N2Zz4K';
-                      }}
-                    />
-                    <div className="flex-1">
-                      <h5 className="font-semibold text-gray-900 dark:text-white">
-                        {item.name[currentLang]}
-                      </h5>
-                      <div className="text-gray-600 dark:text-gray-400 space-y-1">
-                        <p>{t.quantity} {item.quantity}</p>
-                        <p>{t.price} ${item.price}</p>
-                        <p className="font-medium">{t.subtotal} ${item.quantity * item.price}</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                        ${item.quantity * item.price}
-                      </p>
-                      <button
-                        onClick={() => toggleFavorite(item.id)}
-                        className={`mt-2 p-2 rounded-full transition-colors ${
-                          favoriteProducts.has(item.id) 
-                            ? 'text-red-500 hover:text-red-600 bg-red-50 dark:bg-red-900/20' 
-                            : 'text-gray-400 hover:text-red-500'
-                        }`}
-                      >
-                        <Heart size={20} fill={favoriteProducts.has(item.id) ? 'currentColor' : 'none'} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            
-            <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-              <div className="flex justify-between items-center mb-4">
-                <span className="text-xl font-bold text-gray-900 dark:text-white">
-                  {t.orderTotal}
-                </span>
-                <span className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-                  ${selectedOrder.total}
-                </span>
-              </div>
-              
-              <div className="flex gap-3">
-                <button
-                  onClick={() => alert('Download invoice feature coming soon!')}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
-                >
-                  <Download size={18} />
-                  {t.exportBtn} Invoice
-                </button>
-                {(selectedOrder.status === 'shipped' || selectedOrder.status === 'processing') && (
-                  <button
-                    onClick={() => alert(`Tracking: ${selectedOrder.trackingNumber}`)}
-                    className="bg-purple-600 hover:bg-purple-700 text-white py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
-                  >
-                    <Package size={18} />
-                    Track Package
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
+    const originalText = logoutBtn.textContent;
+    logoutBtn.textContent = 'Logging out...';
+    logoutBtn.disabled = true;
+    logoutBtn.style.opacity = '0.7';
+    
+    localStorage.removeItem('indumilk_currentUser');
+    localStorage.removeItem('indumilk_session');
+    
+    setTimeout(() => {
+        logoutBtn.textContent = 'Logout successful!';
+        logoutBtn.style.backgroundColor = '#4CAF50';
+        closeAccount();
+        setTimeout(() => { 
+            window.location.href = 'index.html'; 
+        }, 800);
+    }, 1000);
+}
 
-  return (
-    <div className={`min-h-screen transition-colors duration-300 ${
-      isDarkMode ? 'dark bg-gray-900' : 'bg-gray-50'
-    }`} dir={currentLang === 'ar' ? 'rtl' : 'ltr'}>
-      {/* Header */}
-      <header className="bg-white dark:bg-gray-800 shadow-lg border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-4">
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                {t.pageTitle}
-              </h1>
-              <span className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-3 py-1 rounded-full text-sm font-medium">
-                {filteredOrders.length} orders
-              </span>
-            </div>
-            
-            <div className="flex items-center gap-4">
-              {/* Language Selector */}
-              <select
-                value={currentLang}
-                onChange={(e) => setCurrentLang(e.target.value)}
-                className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1 text-sm"
-              >
-                <option value="en">English</option>
-                <option value="fr">Français</option>
-                <option value="ar">العربية</option>
-              </select>
-              
-              {/* Dark Mode Toggle */}
-              <button
-                onClick={() => setIsDarkMode(!isDarkMode)}
-                className="p-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-              >
-                {isDarkMode ? '☀️' : '🌙'}
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Spending Analytics Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  {t.totalOrdersLabel}
-                </p>
-                <p className="text-3xl font-bold text-gray-900 dark:text-white">
-                  {spendingAnalytics.totalOrders}
-                </p>
-              </div>
-              <ShoppingBag className="w-10 h-10 text-blue-500" />
-            </div>
-          </div>
-          
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  {t.totalSpentLabel}
-                </p>
-                <p className="text-3xl font-bold text-gray-900 dark:text-white">
-                  ${spendingAnalytics.totalSpent}
-                </p>
-              </div>
-              <TrendingUp className="w-10 h-10 text-green-500" />
-            </div>
-          </div>
-          
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  {t.averageOrderLabel}
-                </p>
-                <p className="text-3xl font-bold text-gray-900 dark:text-white">
-                  ${Math.round(spendingAnalytics.averageOrder)}
-                </p>
-              </div>
-              <Package className="w-10 h-10 text-purple-500" />
-            </div>
-          </div>
-          
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  {t.favoriteItemLabel}
-                </p>
-                <p className="text-lg font-bold text-gray-900 dark:text-white truncate">
-                  {spendingAnalytics.favoriteItem}
-                </p>
-              </div>
-              <Star className="w-10 h-10 text-yellow-500" />
-            </div>
-          </div>
-        </div>
-
-        {/* Filters and Search */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 mb-8 border border-gray-200 dark:border-gray-700">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
-            {/* Search */}
-            <div className="relative lg:col-span-2">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder={t.searchPlaceholder}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-            
-            {/* Date Filter */}
-            <select
-              value={dateFilter}
-              onChange={(e) => setDateFilter(e.target.value)}
-              className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-            >
-              <option value="all">{t.allPeriods}</option>
-              <option value="today">{t.today}</option>
-              <option value="thisWeek">{t.thisWeek}</option>
-              <option value="thisMonth">{t.thisMonth}</option>
-              <option value="last30Days">{t.last30Days}</option>
-              <option value="last90Days">{t.last90Days}</option>
-              <option value="thisYear">{t.thisYear}</option>
-            </select>
-            
-            {/* Status Filter */}
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-            >
-              <option value="all">{t.allStatuses}</option>
-              <option value="completed">{t.completed}</option>
-              <option value="pending">{t.pending}</option>
-              <option value="processing">{t.processing}</option>
-              <option value="shipped">{t.shipped}</option>
-              <option value="delivered">{t.delivered}</option>
-              <option value="cancelled">{t.cancelled}</option>
-            </select>
-            
-            {/* Sort */}
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-            >
-              <option value="newest">{t.sortNewest}</option>
-              <option value="oldest">{t.sortOldest}</option>
-              <option value="highest">{t.sortHighest}</option>
-              <option value="lowest">{t.sortLowest}</option>
-            </select>
-          </div>
-          
-          <div className="flex gap-3">
-            <button
-              onClick={clearFilters}
-              className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
-            >
-              <Filter size={16} />
-              {t.clearFiltersBtn}
-            </button>
-            
-            <button
-              onClick={exportOrders}
-              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
-            >
-              <Download size={16} />
-              {t.exportBtn}
-            </button>
-            
-            <button
-              onClick={() => setOrders(generateSamplePurchases())}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
-            >
-              <RefreshCw size={16} />
-              {t.refreshBtn}
-            </button>
-          </div>
-          
-          <div className="mt-4 text-sm text-gray-600 dark:text-gray-400">
-            {t.showingResults.replace('{count}', filteredOrders.length)}
-          </div>
-        </div>
-
-        {/* Orders Grid */}
-        {paginatedOrders.length > 0 ? (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
-              {paginatedOrders.map(order => (
-                <OrderCard key={order.id} order={order} />
-              ))}
-            </div>
-            
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex justify-center items-center gap-2">
-                <button
-                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                  disabled={currentPage === 1}
-                  className="px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-white"
-                >
-                  Previous
-                </button>
-                
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                  <button
-                    key={page}
-                    onClick={() => setCurrentPage(page)}
-                    className={`px-3 py-2 rounded-lg transition-colors ${
-                      page === currentPage
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-white'
-                    }`}
-                  >
-                    {page}
-                  </button>
-                ))}
-                
-                <button
-                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                  disabled={currentPage === totalPages}
-                  className="px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-white"
-                >
-                  Next
-                </button>
-              </div>
-            )}
-          </>
-        ) : (
-          <div className="text-center py-12">
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-12 border border-gray-200 dark:border-gray-700">
-              <ShoppingBag className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                {t.noOrdersTitle}
-              </h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-6">
-                {t.noOrdersText}
-              </p>
-              <button
-                onClick={() => alert('Redirecting to products page...')}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-              >
-                {t.orderNowBtn}
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Order Detail Modal */}
-      <OrderDetailModal />
-    </div>
-  );
-};
-
-export default PurchaseHistoryTracker;
+// Initialize when page loads
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+} else {
+    init();
+}

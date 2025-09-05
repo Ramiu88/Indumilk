@@ -775,17 +775,7 @@
     </style>
 </head>
 <body>
-    <script>
-        // Dark mode initialization
-        (function() {
-            try {
-                const theme = localStorage.getItem('theme');
-                if (theme === 'dark') {
-                    document.documentElement.classList.add('dark-mode');
-                }
-            } catch (e) {}
-        })();
-    </script>
+    <script src="auth-guard.js"></script>
 
     <nav class="navbar">
         <a href="products.html" class="logo" style="display:flex;align-items:center;">

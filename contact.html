@@ -8,19 +8,6 @@
 </head>
 <body>
     <script src="auth-guard.js"></script>
-    <script>
-        // Immediately-invoked function to prevent FOUC (Flash of Unstyled Content)
-        // when switching to dark mode. This script runs before the page is rendered.
-        (function() {
-            try {
-                const theme = localStorage.getItem('theme');
-                // If dark mode is stored in localStorage, apply the 'dark-mode' class to the <html> element.
-                if (theme === 'dark') {
-                    document.documentElement.classList.add('dark-mode');
-                }
-            } catch (e) {}
-        })();
-    </script>
     <nav class="navbar">
         <a href="products.html" class="logo" style="display:flex;align-items:center;">
             <img src="Indumilk.png" alt="Indumilk Logo" style="height:58px;vertical-align:middle;">

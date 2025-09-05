@@ -247,9 +247,13 @@ let cart = [];
 let favorites = [];
 let currentFilter = 'all';
 let selectedProduct = null;
+let isInitialized = false;
 
 // Initialize the application
 function init() {
+    if (isInitialized) return;
+    isInitialized = true;
+    
     loadSettings();
     populateProducts();
     updateLanguage();
@@ -278,6 +282,7 @@ function loadSettings() {
             cart = JSON.parse(savedCart);
             updateCartCount();
         } catch (e) {
+            console.error('Error parsing cart data:', e);
             cart = [];
         }
     }
@@ -287,6 +292,7 @@ function loadSettings() {
         try {
             favorites = JSON.parse(savedFavorites);
         } catch (e) {
+            console.error('Error parsing favorites data:', e);
             favorites = [];
         }
     }
@@ -505,12 +511,17 @@ function addToCart(productId) {
         });
     }
 
-    localStorage.setItem('cart', JSON.stringify(cart));
+    try {
+        localStorage.setItem('cart', JSON.stringify(cart));
+    } catch (e) {
+        console.error('Error saving cart:', e);
+    }
     updateCartCount();
     updateCartDisplay();
 
     // Show success feedback
-    showNotification(translations[currentLang].addToCart + ' ✓');
+    const t = translations[currentLang];
+    showNotification(t.addToCart + ' ✓');
 }
 
 // Toggle favorite
@@ -769,4 +780,8 @@ function logout() {
 }
 
 // Initialize when page loads
-document.addEventListener('DOMContentLoaded', init);
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+} else {
+    init();
+}

@@ -487,6 +487,9 @@ let matchingActive = false;
 let draggedItem = null; 
 let correctMatches = 0; 
 
+// Initialization flag
+let isInitialized = false;
+
 // Adds CSS styles to make game text gray and glowing, plus black backgrounds for quiz options
 function addGlowEffectStyles() { 
 const style = document.createElement('style'); 
@@ -563,6 +566,9 @@ document.head.appendChild(style);
 
 // Initialize the application
 function init() { 
+if (isInitialized) return;
+isInitialized = true;
+
 addGlowEffectStyles(); 
 loadSettings(); 
 updateLanguage(); 
@@ -802,8 +808,12 @@ setTimeout(checkMemoryMatch, 1000);
 
 function checkMemoryMatch() { 
 const [firstIndex, secondIndex] = flippedCards; 
+if (firstIndex === undefined || secondIndex === undefined) return;
+
 const firstCard = memoryCards[firstIndex]; 
 const secondCard = memoryCards[secondIndex]; 
+
+if (!firstCard || !secondCard) return;
 
 if (firstCard.productId === secondCard.productId) { 
 firstCard.isMatched = true; 
@@ -934,6 +944,8 @@ questionCounter.textContent = `${translations[currentLang].questionCounter} ${cu
 
 function selectAnswer(answerIndex) { 
 if (selectedAnswer !== null) return; 
+if (currentQuestionIndex >= quizQuestions.length) return;
+
 selectedAnswer = answerIndex; 
 
 const question = quizQuestions[currentQuestionIndex]; 
@@ -1537,4 +1549,8 @@ dropdown.classList.remove('show');
 }); 
 
 // Initialize when page loads
-document.addEventListener('DOMContentLoaded', init);
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+} else {
+    init();
+}

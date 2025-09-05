@@ -104,9 +104,13 @@ const translations = {
 // State variables
 let currentLang = 'fr';
 let isDarkMode = false;
+let isInitialized = false;
 
 // Initialize the application
 function init() {
+    if (isInitialized) return;
+    isInitialized = true;
+    
     loadSettings();
     updateLanguage();
     setupEventListeners();
@@ -154,6 +158,8 @@ function setupEventListeners() {
 
 // Validate individual field
 function validateField(e) {
+    if (!e || !e.target) return false;
+    
     const field = e.target;
     const value = field.value.trim();
     const t = translations[currentLang];
@@ -198,6 +204,8 @@ function showFieldError(field, message) {
 
 // Clear field error
 function clearFieldError(e) {
+    if (!e || !e.target) return;
+    
     const field = e.target;
     const errorMessage = field.parentNode.querySelector('.field-error');
     if (errorMessage) {
@@ -508,9 +516,16 @@ function enhanceFormInteractions() {
 }
 
 // Initialize when page loads
-document.addEventListener('DOMContentLoaded', () => {
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        init();
+        addScrollAnimationCSS();
+        setupScrollAnimations();
+        enhanceFormInteractions();
+    });
+} else {
     init();
     addScrollAnimationCSS();
     setupScrollAnimations();
     enhanceFormInteractions();
-});
+}
