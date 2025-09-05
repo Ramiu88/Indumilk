@@ -294,8 +294,7 @@ function isDarkMode() {
 function initializePage() {
     // Check if user is already logged in
     const currentUser = userManager.getCurrentUser();
-    const hasValidSession = isValidSession();
-    if (currentUser && hasValidSession) {
+    if (currentUser) {
         // User is already logged in, redirect to menu
         window.location.replace('menu.html');
         return;
@@ -347,23 +346,6 @@ function initializePage() {
             setTimeout(hideMessage, 5000);
         }
     }, 100);
-}
-
-// Session validation helper
-function isValidSession() {
-    try {
-        const session = localStorage.getItem('indumilk_session');
-        if (!session) return false;
-        
-        const sessionData = JSON.parse(session);
-        const now = Date.now();
-        const sessionAge = now - sessionData.timestamp;
-        const maxSessionAge = 24 * 60 * 60 * 1000; // 24 hours
-        
-        return sessionAge <= maxSessionAge;
-    } catch (e) {
-        return false;
-    }
 }
 
 // Initialize when DOM is loaded
