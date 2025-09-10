@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Indumilk - Statistiques</title>
+    <link rel="icon" type="image/png" href="Indumilk.png">
+    <link rel="stylesheet" href="statistics.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+</head>
+<body>
+    <script src="auth-guard.js"></script>
+    
+    <nav class="navbar">
+        <a href="products.html" class="logo" style="display:flex;align-items:center;">
+            <img src="Indumilk.png" alt="Indumilk Logo" style="height:58px;vertical-align:middle;">
+        </a>
+        <div class="navLinks">
+            <a id="btn-menu" href="menu.html">Menu</a>
+            <a id="btn-produit" href="products.html">Produit</a>
+            <a id="btn-games" href="minigame.html">Mini Jeux</a>
+            <a id="btn-history" href="history.html">Histoire</a>
+            <a id="btn-stats" class="active" href="statistics.html">Statistiques</a>
+            <a id="btn-contact" href="contact.html">Contact</a>
+        </div>
+        <div class="langSelect">
+            <button class="langIcon" onclick="toggleLangDropdown()">🌐</button>
+            <div class="langDropdown" id="langDropdown">
+                <button onclick="setLang('fr')">Français</button>
+                <button onclick="setLang('en')">English</button>
+                <button onclick="setLang('ar')">العربية</button>
+            </div>
+        </div>
+        <button class="accountHub" onclick="showAccount()">👤</button>
+    </nav>
+
+    <div class="accountSlide" id="accountSlide">
+        <button class="closeSlide" onclick="closeAccount()">×</button>
+        <h2 id="profileTitle">Profil</h2>
+        <div class="profileInfo" id="profileInfo">
+            <p>Nom: Utilisateur Invité</p>
+            <p>Email: guest@indumilk.com</p>
+            <p>Membre depuis: 2024</p>
+        </div>
+        <div class="orderHistory" id="orderHistory">
+            <h3>Historique des commandes</h3>
+            <p>Aucune commande récente</p>
+        </div>
+        <button class="logoutBtn" id="logoutBtn" onclick="logout()">Déconnexion</button>
+    </div>
+
+    <div class="statsContainer">
+        <h1 class="statsTitle" id="statsTitle">Statistiques Indumilk</h1>
+        
+        <!-- KPI Cards -->
+        <div class="kpiCards">
+            <div class="kpiCard">
+                <div class="kpiIcon">📊</div>
+                <div class="kpiContent">
+                    <h3 id="totalSalesLabel">Ventes Totales</h3>
+                    <div class="kpiValue" id="totalSales">125,430 DH</div>
+                    <div class="kpiChange positive">+12.5%</div>
+                </div>
+            </div>
+            <div class="kpiCard">
+                <div class="kpiIcon">👥</div>
+                <div class="kpiContent">
+                    <h3 id="customersLabel">Clients Actifs</h3>
+                    <div class="kpiValue" id="customers">2,847</div>
+                    <div class="kpiChange positive">+8.3%</div>
+                </div>
+            </div>
+            <div class="kpiCard">
+                <div class="kpiIcon">📦</div>
+                <div class="kpiContent">
+                    <h3 id="ordersLabel">Commandes</h3>
+                    <div class="kpiValue" id="orders">1,234</div>
+                    <div class="kpiChange positive">+15.7%</div>
+                </div>
+            </div>
+            <div class="kpiCard">
+                <div class="kpiIcon">⭐</div>
+                <div class="kpiContent">
+                    <h3 id="ratingLabel">Note Moyenne</h3>
+                    <div class="kpiValue" id="rating">4.8/5</div>
+                    <div class="kpiChange positive">+0.2</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Grid -->
+        <div class="chartsGrid">
+            <!-- Sales Chart -->
+            <div class="chartCard">
+                <div class="chartHeader">
+                    <h3 id="salesChartTitle">Évolution des Ventes</h3>
+                    <div class="chartControls">
+                        <button class="timeBtn active" data-period="7d">7J</button>
+                        <button class="timeBtn" data-period="30d">30J</button>
+                        <button class="timeBtn" data-period="90d">90J</button>
+                    </div>
+                </div>
+                <div class="chartContainer">
+                    <canvas id="salesChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Products Chart -->
+            <div class="chartCard">
+                <div class="chartHeader">
+                    <h3 id="productsChartTitle">Répartition des Produits</h3>
+                </div>
+                <div class="chartContainer">
+                    <canvas id="productsChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Customer Growth Chart -->
+            <div class="chartCard">
+                <div class="chartHeader">
+                    <h3 id="growthChartTitle">Croissance des Clients</h3>
+                </div>
+                <div class="chartContainer">
+                    <canvas id="growthChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Performance Chart -->
+            <div class="chartCard">
+                <div class="chartHeader">
+                    <h3 id="performanceChartTitle">Performance par Catégorie</h3>
+                </div>
+                <div class="chartContainer">
+                    <canvas id="performanceChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Table -->
+        <div class="dataTable">
+            <div class="tableHeader">
+                <h3 id="tableTitle">Top Produits</h3>
+                <button class="exportBtn" id="exportBtn">📥 Exporter</button>
+            </div>
+            <div class="tableContainer">
+                <table id="productsTable">
+                    <thead>
+                        <tr>
+                            <th id="productNameHeader">Produit</th>
+                            <th id="salesHeader">Ventes</th>
+                            <th id="revenueHeader">Revenus</th>
+                            <th id="growthHeader">Croissance</th>
+                        </tr>
+                    </thead>
+                    <tbody id="productsTableBody">
+                        <!-- Data populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dark Mode Toggle -->
+    <button class="darkModeToggle" onclick="toggleDarkMode()" id="darkModeToggle">🌙</button>
+
+    <script src="statistics.js"></script>
+</body>
+</html>

@@ -204,7 +204,23 @@ const products = [
         },
         price: 12,
         category: "dairy",
-        image: "https://via.placeholder.com/120/e1f5fe/0288d1?text=Yaourt"
+        image: "yogurt.jpg"
+    },
+    {
+        id: 9,
+        name: {
+            fr: "Petit Jean",
+            en: "Petit Jean",
+            ar: "بيتي جان"
+        },
+        description: {
+            fr: "Fromage artisanal Petit Jean, doux et crémeux, parfait pour les plateaux de fromages.",
+            en: "Artisan Petit Jean cheese, mild and creamy, perfect for cheese boards.",
+            ar: "جبن بيتي جان الحرفي، ناعم وكريمي، مثالي لأطباق الجبن."
+        },
+        price: 28,
+        category: "cheese",
+        image: "https://images.pexels.com/photos/1070850/pexels-photo-1070850.jpeg?auto=compress&cs=tinysrgb&w=200"
     },
     {
         id: 7,
@@ -220,7 +236,7 @@ const products = [
         },
         price: 28,
         category: "premium",
-        image: "https://via.placeholder.com/120/fff3e0/ff8f00?text=Beurre"
+        image: "https://images.pexels.com/photos/248412/pexels-photo-248412.jpeg?auto=compress&cs=tinysrgb&w=200"
     },
     {
         id: 8,
@@ -236,7 +252,7 @@ const products = [
         },
         price: 65,
         category: "premium",
-        image: "https://via.placeholder.com/120/f3e5f5/8e24aa?text=Camembert"
+        image: "https://images.pexels.com/photos/773253/pexels-photo-773253.jpeg?auto=compress&cs=tinysrgb&w=200"
     }
 ];
 
@@ -268,18 +284,27 @@ function loadSettings() {
     if (savedDarkMode === 'enabled') {
         isDarkMode = true;
         document.body.classList.add('dark-mode');
-        document.getElementById('darkModeToggle').textContent = '☀️';
+        const toggle = document.getElementById('darkModeToggle');
+        if (toggle) toggle.textContent = '☀️';
     }
 
     const savedCart = localStorage.getItem('cart');
     if (savedCart) {
-        cart = JSON.parse(savedCart);
-        updateCartCount();
+        try {
+            cart = JSON.parse(savedCart);
+            updateCartCount();
+        } catch (e) {
+            cart = [];
+        }
     }
 
     const savedFavorites = localStorage.getItem('favorites');
     if (savedFavorites) {
-        favorites = JSON.parse(savedFavorites);
+        try {
+            favorites = JSON.parse(savedFavorites);
+        } catch (e) {
+            favorites = [];
+        }
     }
 }
 
@@ -295,9 +320,22 @@ function setupEventListeners() {
     });
 
     // Close modal when clicking outside
-    document.getElementById('productModal').addEventListener('click', (e) => {
-        if (e.target === document.getElementById('productModal')) {
-            closeProductModal();
+    const productModal = document.getElementById('productModal');
+    if (productModal) {
+        productModal.addEventListener('click', (e) => {
+            if (e.target === productModal) {
+                closeProductModal();
+            }
+        });
+    }
+
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', function(event) {
+        const langSelect = document.querySelector('.langSelect');
+        const dropdown = document.getElementById('langDropdown');
+
+        if (langSelect && dropdown && !langSelect.contains(event.target)) {
+            dropdown.classList.remove('show');
         }
     });
 }
@@ -315,6 +353,8 @@ function updateFilterButtons() {
 // Populate products grid
 function populateProducts() {
     const productsGrid = document.getElementById('productsGrid');
+    if (!productsGrid) return;
+    
     productsGrid.innerHTML = '';
 
     const filteredProducts = currentFilter === 'all' 
@@ -337,7 +377,8 @@ function createProductCard(product) {
     const t = translations[currentLang];
 
     card.innerHTML = `
-        <img src="${product.image}" alt="${product.name[currentLang]}" class="productImage">
+        <img src="${product.image}" alt="${product.name[currentLang]}" class="productImage" 
+             onerror="this.src='https://images.pexels.com/photos/416978/pexels-photo-416978.jpeg?auto=compress&cs=tinysrgb&w=200'">
         <div class="productName">${product.name[currentLang]}</div>
         <div class="productPrice">${product.price} DH</div>
         <div class="productCategory">${getCategoryName(product.category)}</div>
@@ -371,13 +412,35 @@ function updateFeaturedProduct() {
     const featuredProduct = products.find(p => p.featured) || products[0];
     const t = translations[currentLang];
 
-    document.getElementById('featuredImage').src = featuredProduct.image;
-    document.getElementById('featuredTitle').textContent = t.featuredTitle;
-    document.getElementById('featuredName').textContent = featuredProduct.name[currentLang];
-    document.getElementById('featuredDescription').textContent = featuredProduct.description[currentLang];
-    document.getElementById('featuredPrice').textContent = `${featuredProduct.price} DH`;
-    document.getElementById('featuredBtn').textContent = t.addToCart;
-    document.getElementById('featuredBtn').onclick = () => addToCart(featuredProduct.id);
+    const elements = {
+        'featuredImage': { src: featuredProduct.image },
+        'featuredTitle': { textContent: t.featuredTitle },
+        'featuredName': { textContent: featuredProduct.name[currentLang] },
+        'featuredDescription': { textContent: featuredProduct.description[currentLang] },
+        'featuredPrice': { textContent: `${featuredProduct.price} DH` },
+        'featuredBtn': { textContent: t.addToCart }
+    };
+
+    Object.entries(elements).forEach(([id, props]) => {
+        const element = document.getElementById(id);
+        if (element) {
+            Object.entries(props).forEach(([prop, value]) => {
+                if (prop === 'src') {
+                    element.src = value;
+                    element.onerror = function() {
+                        this.src = 'https://images.pexels.com/photos/416978/pexels-photo-416978.jpeg?auto=compress&cs=tinysrgb&w=400';
+                    };
+                } else {
+                    element[prop] = value;
+                }
+            });
+        }
+    });
+
+    const featuredBtn = document.getElementById('featuredBtn');
+    if (featuredBtn) {
+        featuredBtn.onclick = () => addToCart(featuredProduct.id);
+    }
 }
 
 // Open product modal
@@ -386,24 +449,57 @@ function openProductModal(product) {
     const t = translations[currentLang];
     const isFavorite = favorites.includes(product.id);
 
-    document.getElementById('modalImage').src = product.image;
-    document.getElementById('modalTitle').textContent = product.name[currentLang];
-    document.getElementById('modalDescription').textContent = product.description[currentLang];
-    document.getElementById('modalPrice').textContent = `${product.price} DH`;
-    document.getElementById('modalDetailsTitle').textContent = t.productDetails;
-    document.getElementById('modalOrigin').textContent = t.origin;
-    document.getElementById('modalExpiry').textContent = t.expiry;
-    document.getElementById('modalStorage').textContent = t.storage;
-    document.getElementById('modalAddBtn').textContent = t.addToCart;
-    document.getElementById('modalFavoriteBtn').textContent = `❤️ ${t.favorites}`;
-    document.getElementById('modalFavoriteBtn').className = `modalFavoriteBtn ${isFavorite ? 'active' : ''}`;
+    const elements = {
+        'modalImage': { src: product.image },
+        'modalTitle': { textContent: product.name[currentLang] },
+        'modalDescription': { textContent: product.description[currentLang] },
+        'modalPrice': { textContent: `${product.price} DH` },
+        'modalDetailsTitle': { textContent: t.productDetails },
+        'modalOrigin': { textContent: t.origin },
+        'modalExpiry': { textContent: t.expiry },
+        'modalStorage': { textContent: t.storage },
+        'modalAddBtn': { textContent: t.addToCart },
+        'modalFavoriteBtn': { textContent: `❤️ ${t.favorites}` }
+    };
 
-    document.getElementById('productModal').classList.add('show');
+    Object.entries(elements).forEach(([id, props]) => {
+        const element = document.getElementById(id);
+        if (element) {
+            Object.entries(props).forEach(([prop, value]) => {
+                if (prop === 'src') {
+                    element.src = value;
+                    element.onerror = function() {
+                        this.src = 'https://images.pexels.com/photos/416978/pexels-photo-416978.jpeg?auto=compress&cs=tinysrgb&w=400';
+                    };
+                } else {
+                    element[prop] = value;
+                }
+            });
+        }
+    });
+
+    const modalFavoriteBtn = document.getElementById('modalFavoriteBtn');
+    if (modalFavoriteBtn) {
+        modalFavoriteBtn.className = `modalFavoriteBtn ${isFavorite ? 'active' : ''}`;
+        modalFavoriteBtn.onclick = () => toggleFavorite(product.id);
+    }
+
+    const modalAddBtn = document.getElementById('modalAddBtn');
+    if (modalAddBtn) {
+        modalAddBtn.onclick = () => {
+            addToCart(product.id);
+            closeProductModal();
+        };
+    }
+
+    const modal = document.getElementById('productModal');
+    if (modal) modal.classList.add('show');
 }
 
 // Close product modal
 function closeProductModal() {
-    document.getElementById('productModal').classList.remove('show');
+    const modal = document.getElementById('productModal');
+    if (modal) modal.classList.remove('show');
     selectedProduct = null;
 }
 
@@ -453,13 +549,16 @@ function toggleFavorite(productId) {
 // Update cart count
 function updateCartCount() {
     const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-    document.getElementById('cartCount').textContent = totalItems;
+    const cartCount = document.getElementById('cartCount');
+    if (cartCount) cartCount.textContent = totalItems;
 }
 
 // Update cart display
 function updateCartDisplay() {
     const cartItems = document.getElementById('cartItems');
     const cartTotal = document.getElementById('cartTotal');
+    if (!cartItems || !cartTotal) return;
+    
     const t = translations[currentLang];
 
     if (cart.length === 0) {
@@ -475,7 +574,8 @@ function updateCartDisplay() {
         total += item.price * item.quantity;
         html += `
             <div class="cartItem">
-                <img src="${item.image}" alt="${item.name}" class="cartItemImage">
+                <img src="${item.image}" alt="${item.name}" class="cartItemImage" 
+                     onerror="this.src='https://images.pexels.com/photos/416978/pexels-photo-416978.jpeg?auto=compress&cs=tinysrgb&w=100'">
                 <div class="cartItemInfo">
                     <div class="cartItemName">${item.name}</div>
                     <div class="cartItemPrice">${item.price} DH</div>
@@ -511,8 +611,10 @@ function updateQuantity(productId, change) {
 // Toggle cart sidebar
 function toggleCart() {
     const cartSidebar = document.getElementById('cartSidebar');
-    cartSidebar.classList.toggle('show');
-    updateCartDisplay();
+    if (cartSidebar) {
+        cartSidebar.classList.toggle('show');
+        updateCartDisplay();
+    }
 }
 
 // Show notification
@@ -520,79 +622,89 @@ function showNotification(message) {
     const notification = document.createElement('div');
     notification.style.cssText = `
         position: fixed;
-        top: 20px;
-        right: 20px;
-        background: #28a745;
+        top: 30px;
+        right: 30px;
+        background: linear-gradient(135deg, #28a745, #20c997);
         color: white;
-        padding: 12px 20px;
-        border-radius: 8px;
-        box-shadow: 0 4px 15px rgba(40,167,69,0.3);
+        padding: 16px 24px;
+        border-radius: 12px;
+        box-shadow: 0 8px 25px rgba(40,167,69,0.4);
         z-index: 5000;
-        font-weight: bold;
-        animation: slideIn 0.3s ease;
+        font-weight: 600;
+        animation: slideIn 0.4s ease;
+        backdrop-filter: blur(20px);
     `;
     notification.textContent = message;
     document.body.appendChild(notification);
 
     setTimeout(() => {
-        notification.remove();
-    }, 2000);
+        notification.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }, 2500);
 }
 
 // Language functions
 function toggleLangDropdown() {
     const dropdown = document.getElementById('langDropdown');
-    dropdown.classList.toggle('show');
+    if (dropdown) dropdown.classList.toggle('show');
 }
 
 function setLang(lang) {
     currentLang = lang;
     localStorage.setItem('selectedLanguage', lang);
     updateLanguage();
-    document.getElementById('langDropdown').classList.remove('show');
+    const dropdown = document.getElementById('langDropdown');
+    if (dropdown) dropdown.classList.remove('show');
 }
 
 function updateLanguage() {
     const t = translations[currentLang];
 
     // Update navigation
-    document.getElementById('btn-menu').textContent = t.menu;
-    document.getElementById('btn-produit').textContent = t.produit;
-    document.getElementById('btn-games').textContent = t.games;
-    document.getElementById('btn-history').textContent = t.history;
-    document.getElementById('btn-contact').textContent = t.contact;
+    const navElements = {
+        'btn-menu': t.menu,
+        'btn-produit': t.produit,
+        'btn-games': t.games,
+        'btn-history': t.history,
+        'btn-contact': t.contact,
+        'productsTitle': t.productsTitle,
+        'profileTitle': t.profile,
+        'logoutBtn': t.logout,
+        'filterAll': t.all,
+        'filterDairy': t.dairy,
+        'filterCheese': t.cheese,
+        'filterPremium': t.premium,
+        'cartTitle': t.cart,
+        'checkoutBtn': t.checkout
+    };
 
-    // Update page title
-    document.getElementById('productsTitle').textContent = t.productsTitle;
-
-    // Update filter buttons
-    document.getElementById('filterAll').textContent = t.all;
-    document.getElementById('filterDairy').textContent = t.dairy;
-    document.getElementById('filterCheese').textContent = t.cheese;
-    document.getElementById('filterPremium').textContent = t.premium;
-
-    // Update profile section
-    document.getElementById('profileTitle').textContent = t.profile;
-    document.getElementById('logoutBtn').textContent = t.logout;
+    Object.entries(navElements).forEach(([id, text]) => {
+        const element = document.getElementById(id);
+        if (element) element.textContent = text;
+    });
 
     // Update profile info
     const profileInfo = document.getElementById('profileInfo');
-    profileInfo.innerHTML = `
-        <p>${t.profileName}</p>
-        <p>${t.profileEmail}</p>
-        <p>${t.profileMember}</p>
-    `;
+    if (profileInfo) {
+        profileInfo.innerHTML = `
+            <p>${t.profileName}</p>
+            <p>${t.profileEmail}</p>
+            <p>${t.profileMember}</p>
+        `;
+    }
 
     // Update order history
     const orderHistory = document.getElementById('orderHistory');
-    orderHistory.innerHTML = `
-        <h3>${t.orderHistoryTitle}</h3>
-        <p>${t.orderHistoryEmpty}</p>
-    `;
-
-    // Update cart elements
-    document.getElementById('cartTitle').textContent = t.cart;
-    document.getElementById('checkoutBtn').textContent = t.checkout;
+    if (orderHistory) {
+        orderHistory.innerHTML = `
+            <h3>${t.orderHistoryTitle}</h3>
+            <p>${t.orderHistoryEmpty}</p>
+        `;
+    }
 
     // Update products and featured product
     populateProducts();
@@ -605,7 +717,7 @@ function updateLanguage() {
         document.body.style.fontFamily = 'Arial, Tahoma, sans-serif';
     } else {
         document.body.setAttribute('dir', 'ltr');
-        document.body.style.fontFamily = 'Arial, sans-serif';
+        document.body.style.fontFamily = 'Inter, Segoe UI, sans-serif';
     }
 }
 
@@ -615,24 +727,29 @@ function toggleDarkMode() {
     document.body.classList.toggle('dark-mode');
 
     const toggle = document.getElementById('darkModeToggle');
-    toggle.textContent = isDarkMode ? '☀️' : '🌙';
+    if (toggle) {
+        toggle.textContent = isDarkMode ? '☀️' : '🌙';
+    }
 
     localStorage.setItem('darkMode', isDarkMode ? 'enabled' : 'disabled');
 }
 
 // Account functions
 function showAccount() {
-    document.getElementById('accountSlide').classList.add('show');
+    const slide = document.getElementById('accountSlide');
+    if (slide) slide.classList.add('show');
 }
 
 function closeAccount() {
-    document.getElementById('accountSlide').classList.remove('show');
+    const slide = document.getElementById('accountSlide');
+    if (slide) slide.classList.remove('show');
 }
 
 // UNIFIED LOGOUT FUNCTION - Redirects to authentication page
 function logout() {
     const t = translations[currentLang];
     const logoutBtn = document.getElementById('logoutBtn');
+    if (!logoutBtn) return;
     
     // Show confirmation dialog
     if (!confirm(t.logoutConfirm)) {
@@ -651,10 +768,6 @@ function logout() {
     localStorage.removeItem('indumilk_token');
     localStorage.removeItem('userPreferences');
     
-    // Optional: Clear other session data but keep app preferences
-    // localStorage.removeItem('cart');
-    // localStorage.removeItem('favorites');
-    
     // Simulate logout process
     setTimeout(() => {
         // Show success state briefly
@@ -664,26 +777,12 @@ function logout() {
         // Close account slide
         closeAccount();
         
-        // Clear any timers or intervals
-        clearTimeout(window.logoutTimer);
-        
         // Redirect to authentication page
         setTimeout(() => {
-            // Change this to your actual authentication page
             window.location.href = 'index.html';
         }, 800);
     }, 1000);
 }
-
-// Close dropdowns when clicking outside
-document.addEventListener('click', function(event) {
-    const langSelect = document.querySelector('.langSelect');
-    const dropdown = document.getElementById('langDropdown');
-
-    if (!langSelect.contains(event.target)) {
-        dropdown.classList.remove('show');
-    }
-});
 
 // Initialize when page loads
 document.addEventListener('DOMContentLoaded', init);
