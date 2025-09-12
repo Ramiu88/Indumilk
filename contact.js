@@ -108,6 +108,7 @@ let isDarkMode = false;
 // Initialize the application
 function init() {
     loadSettings();
+    loadUserProfile();
     updateLanguage();
     setupEventListeners();
 }
@@ -125,6 +126,32 @@ function loadSettings() {
         document.body.classList.add('dark-mode');
         const toggle = document.getElementById('darkModeToggle');
         if (toggle) toggle.textContent = '☀️';
+    }
+}
+
+// Load user profile information
+function loadUserProfile() {
+    try {
+        const currentUser = JSON.parse(localStorage.getItem('indumilk_currentUser'));
+        if (currentUser) {
+            updateProfileDisplay(currentUser);
+        }
+    } catch (e) {
+        console.log('No user data found, using guest profile');
+    }
+}
+
+// Update profile display with actual user data
+function updateProfileDisplay(user) {
+    const t = translations[currentLang];
+    const profileInfo = document.getElementById('profileInfo');
+    if (profileInfo && user) {
+        const memberSince = user.createdAt ? new Date(user.createdAt).getFullYear() : '2024';
+        profileInfo.innerHTML = `
+            <p>${t.profileName.replace('Utilisateur Invité', user.name || 'Utilisateur Invité').replace('Guest User', user.name || 'Guest User').replace('مستخدم ضيف', user.name || 'مستخدم ضيف')}</p>
+            <p>${t.profileEmail.replace('guest@indumilk.com', user.email || 'guest@indumilk.com')}</p>
+            <p>${t.profileMember.replace('2024', memberSince)}</p>
+        `;
     }
 }
 
@@ -268,11 +295,8 @@ function updateLanguage() {
     // Update profile info
     const profileInfo = document.getElementById('profileInfo');
     if (profileInfo) {
-        profileInfo.innerHTML = `
-            <p>${t.profileName}</p>
-            <p>${t.profileEmail}</p>
-            <p>${t.profileMember}</p>
-        `;
+        // Re-load user profile with new language
+        loadUserProfile();
     }
 
     // Update order history
